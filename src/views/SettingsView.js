@@ -6,6 +6,8 @@ import { pharmacyState } from '../context/pharmacyState.js';
 import { themeState } from '../context/themeState.js';
 import { i18n } from '../context/i18nState.js';
 import { dbService } from '../services/dbService.js';
+import { pharmacyService } from '../services/pharmacyService.js';
+import { authService } from '../services/authService.js';
 
 export function renderSettingsView() {
   const profile = pharmacyState.profile;
@@ -257,8 +259,8 @@ export function bindSettingsEvents(container, router) {
     router.renderCurrentView();
   });
 
-  // Save Pharmacy Profile (Phase 4 requirement: immediately reflected everywhere)
-  container.querySelector('#pharmacy-profile-form')?.addEventListener('submit', (e) => {
+  // Save Pharmacy Profile (immediately reflected in Firestore & everywhere)
+  container.querySelector('#pharmacy-profile-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const newName = container.querySelector('#profile-name-input').value.trim();
     const newDl = container.querySelector('#profile-dl-input').value.trim();
@@ -267,16 +269,21 @@ export function bindSettingsEvents(container, router) {
     const newEmail = container.querySelector('#profile-email-input').value.trim();
     const newAddress = container.querySelector('#profile-address-input').value.trim();
 
-    pharmacyState.updateProfile({
+    const pharmacyId = authService.user?.pharmacyId || pharmacyState.profile.id || 'pharmacy_sri_maheswari';
+
+    const updates = {
       name: newName,
       drugLicense: newDl,
       gstin: newGstin,
       phone: newPhone,
       email: newEmail,
       address: newAddress
-    });
+    };
 
-    dbService.logAudit("Settings Updated", `Pharmacy profile updated: ${newName} (GSTIN: ${newGstin})`);
+    // Persist to Cloud Firestore and local reactive state
+    await pharmacyService.savePharmacyProfile(pharmacyId, updates);
+
+    dbService.logAudit("Settings Updated", "pharmacies", pharmacyId, `Pharmacy profile updated: ${newName} (GSTIN: ${newGstin})`);
     alert(i18n.t('settingsUpdated'));
     router.renderCurrentView();
   });

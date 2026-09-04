@@ -4,7 +4,7 @@
 import { pharmacyState } from '../context/pharmacyState.js';
 import { themeState } from '../context/themeState.js';
 import { i18n } from '../context/i18nState.js';
-import { authState } from '../context/authState.js';
+import { authService } from '../services/authService.js';
 import { dbService } from '../services/dbService.js';
 
 export function renderHeader(onOpenNotifications) {
@@ -78,7 +78,7 @@ export function renderHeader(onOpenNotifications) {
             aria-label="Profile and Session" 
             class="w-10 h-10 flex items-center justify-center rounded-full p-space-2xs cursor-pointer hover:ring-2 hover:ring-primary transition-all"
             type="button"
-            title="${authState.user?.displayName || 'Pharmacist'}"
+            title="${authService.user?.fullName || authService.user?.phoneNumber || 'Pharmacist'}"
           >
             <img 
               alt="Profile" 

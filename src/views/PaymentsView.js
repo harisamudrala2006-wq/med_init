@@ -2,6 +2,8 @@
 // Preserves accounting rule: Outstanding = Verified Purchases - Verified Payments
 
 import { dbService } from '../services/dbService.js';
+import { storageService } from '../services/storageService.js';
+import { authService } from '../services/authService.js';
 import { i18n } from '../context/i18nState.js';
 
 export function renderPaymentsView() {
@@ -81,7 +83,7 @@ export function renderPaymentsView() {
               </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-space-sm">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-space-sm">
               <div class="flex flex-col gap-1">
                 <label class="font-label-caps text-label-caps text-on-surface-variant font-medium">Reference Number (UTR / Cheque / Txn ID)</label>
                 <input id="pay-ref-input" type="text" placeholder="e.g. HDFC-NEFT-8899201" class="w-full h-11 px-3 bg-surface-container-low dark:bg-surface-container-high rounded-lg text-body-md text-on-surface focus:ring-2 focus:ring-primary border border-outline-variant/30" />
@@ -91,9 +93,14 @@ export function renderPaymentsView() {
                 <label class="font-label-caps text-label-caps text-on-surface-variant font-medium">Payment Date</label>
                 <input id="pay-date-input" type="date" value="${new Date().toISOString().split('T')[0]}" class="w-full h-11 px-3 bg-surface-container-low dark:bg-surface-container-high rounded-lg text-body-md text-on-surface focus:ring-2 focus:ring-primary border border-outline-variant/30" />
               </div>
+
+              <div class="flex flex-col gap-1">
+                <label class="font-label-caps text-label-caps text-on-surface-variant font-medium">Attach Proof / Receipt (Optional)</label>
+                <input id="pay-receipt-file" type="file" accept="image/*,.pdf" class="w-full h-11 px-3 py-2 bg-surface-container-low dark:bg-surface-container-high rounded-lg text-body-sm text-on-surface file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-secondary-container file:text-primary cursor-pointer border border-outline-variant/30" />
+              </div>
             </div>
 
-            <button type="submit" class="w-full h-12 bg-primary-container text-on-primary font-headline-sm text-body-md rounded-xl flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer">
+            <button type="submit" id="pay-submit-btn" class="w-full h-12 bg-primary-container text-on-primary font-headline-sm text-body-md rounded-xl flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer">
               <span class="material-symbols-outlined text-[20px]">check_circle</span>
               <span>Verify & Record Payment Settlement</span>
             </button>
@@ -115,6 +122,7 @@ export function renderPaymentsView() {
                   <h3 class="font-headline-sm text-headline-sm text-on-surface font-semibold">${p.distributorName}</h3>
                   <p class="font-body-sm text-body-sm text-on-surface-variant">
                     Ref: <span class="font-code-num text-on-surface font-medium">${p.referenceNumber || 'N/A'}</span> • Method: ${p.paymentMethod.toUpperCase()} • Date: ${p.paymentDate}
+                    ${p.receiptUrl ? ` • <a href="${p.receiptUrl}" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline font-medium inline-flex items-center gap-0.5"><span class="material-symbols-outlined text-[14px]">attachment</span>View Receipt</a>` : ''}
                   </p>
                 </div>
               </div>
@@ -157,7 +165,7 @@ export function bindPaymentsEvents(container, router) {
   updateCalc();
 
   // Handle submit
-  container.querySelector('#record-payment-form')?.addEventListener('submit', (e) => {
+  container.querySelector('#record-payment-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const distId = distSelect.value;
     const dist = dbService.getDistributorById(distId);
@@ -171,6 +179,29 @@ export function bindPaymentsEvents(container, router) {
     const refNumber = container.querySelector('#pay-ref-input').value.trim() || `REC-${Date.now()}`;
     const paymentMethod = container.querySelector('#pay-method-select').value;
     const paymentDate = container.querySelector('#pay-date-input').value;
+    const receiptFileInput = container.querySelector('#pay-receipt-file');
+    const submitBtn = container.querySelector('#pay-submit-btn');
+
+    let receiptUrl = '';
+    const file = receiptFileInput?.files?.[0];
+
+    if (file) {
+      try {
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.innerHTML = `<span class="material-symbols-outlined text-[20px] animate-spin">progress_activity</span><span>Uploading Receipt...</span>`;
+        }
+        const pharmacyId = authService.user?.pharmacyId || 'pharmacy_sri_maheswari';
+        const uploadRes = await storageService.uploadReceiptImage(file, pharmacyId, `pay_${Date.now()}`);
+        if (uploadRes?.url) {
+          receiptUrl = uploadRes.url;
+        }
+      } catch (err) {
+        console.warn("Could not upload receipt:", err);
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    }
 
     dbService.savePayment({
       distributorId: dist.id,
@@ -179,6 +210,7 @@ export function bindPaymentsEvents(container, router) {
       paymentDate,
       paymentMethod,
       referenceNumber: refNumber,
+      receiptUrl,
       status: "verified"
     });
 

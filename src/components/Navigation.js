@@ -4,7 +4,7 @@
 
 import { i18n } from '../context/i18nState.js';
 import { dbService } from '../services/dbService.js';
-import { authState } from '../context/authState.js';
+import { authService } from '../services/authService.js';
 
 export function renderBottomNav(currentTab = 'dashboard') {
   const reviewCount = dbService.getReviewCenterItems().length;
@@ -135,7 +135,7 @@ export function bindNavigationEvents(container, router) {
   const logoutBtn = container.querySelector('#sidebar-logout-btn');
   if (logoutBtn) {
     logoutBtn.addEventListener('click', async () => {
-      await authState.logout();
+      await authService.logout();
       router.navigate('login');
     });
   }

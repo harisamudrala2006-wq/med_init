@@ -1,5 +1,6 @@
 // Client-Side Router with Protected Routes (Phase 3)
-import { authState } from './context/authState.js';
+import { authService } from './services/authService.js';
+import { dbService } from './services/dbService.js';
 import { pharmacyState } from './context/pharmacyState.js';
 import { themeState } from './context/themeState.js';
 import { i18n } from './context/i18nState.js';
@@ -30,7 +31,18 @@ class Router {
     pharmacyState.subscribe(() => this.renderCurrentView());
     themeState.subscribe(() => this.renderCurrentView());
     i18n.subscribe(() => this.renderCurrentView());
-    authState.subscribe((user) => {
+
+    // Real-time Firestore sync subscription
+    dbService.subscribe(() => {
+      // If user is actively typing in an input field, defer re-render to avoid losing cursor focus
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA')) {
+        return;
+      }
+      this.renderCurrentView();
+    });
+
+    authService.subscribe((user) => {
       if (!user && this.currentRoute !== 'login') {
         this.navigate('login');
       } else {
@@ -53,8 +65,8 @@ class Router {
       });
     }
 
-    // Auth Route Guard (Phase 3)
-    if (!authState.isAuthenticated && path !== 'login') {
+    // Auth Route Guard
+    if (!authService.isAuthenticated && path !== 'login') {
       this.currentRoute = 'login';
       if (push) window.history.pushState(null, '', '#login');
       this.renderCurrentView();
@@ -62,7 +74,7 @@ class Router {
     }
 
     // If authenticated and trying to go to login, send to dashboard
-    if (authState.isAuthenticated && path === 'login') {
+    if (authService.isAuthenticated && path === 'login') {
       this.currentRoute = 'dashboard';
       if (push) window.history.pushState(null, '', '#dashboard');
       this.renderCurrentView();

@@ -2,6 +2,8 @@
 // Exact match to Stitch Upload_Purchase_Bill_and_OCR_a0564e61.html
 
 import { dbService } from '../services/dbService.js';
+import { storageService } from '../services/storageService.js';
+import { ocrService } from '../services/ocrService.js';
 import { i18n } from '../context/i18nState.js';
 
 let draftBill = {
@@ -320,19 +322,49 @@ export function renderUploadOCRView() {
 }
 
 export function bindUploadOCREvents(container, router) {
+  const handleFileProcess = async (file) => {
+    if (!file) return;
+    const saveBtn = container.querySelector('#ocr-save-bill-btn');
+    if (saveBtn) saveBtn.disabled = true;
+
+    try {
+      const uploadRes = await storageService.uploadBillImage(file, dbService.activePharmacyId, `bill_${Date.now()}`);
+      draftBill.fileName = uploadRes.fileName;
+      draftBill.fileSize = uploadRes.fileSize;
+      draftBill.imageUrl = uploadRes.url;
+      draftBill.storagePath = uploadRes.storagePath;
+
+      // Extract real OCR items
+      const ocrResult = await ocrService.extractBillData(uploadRes.url, dbService.getDistributors());
+      draftBill.invoiceNumber = ocrResult.invoiceNumber;
+      draftBill.invoiceDate = ocrResult.invoiceDate;
+      draftBill.distributorId = ocrResult.distributorId;
+      draftBill.distributorName = ocrResult.distributorName;
+      draftBill.ocrConfidence = ocrResult.ocrConfidence;
+      draftBill.items = ocrResult.items;
+
+      router.renderCurrentView();
+    } catch (err) {
+      alert("Error processing bill: " + err.message);
+    } finally {
+      if (saveBtn) saveBtn.disabled = false;
+    }
+  };
+
   // Photo capture trigger
   container.querySelector('#ocr-take-photo-btn')?.addEventListener('click', () => {
-    alert("Camera scanner activated. Point camera steadily at the distributor tax invoice.");
+    const filePicker = container.querySelector('#ocr-file-picker');
+    if (filePicker) {
+      filePicker.setAttribute('capture', 'environment');
+      filePicker.click();
+    }
   });
 
-  // File picker simulation
-  container.querySelector('#ocr-file-picker')?.addEventListener('change', (e) => {
+  // File picker handler
+  container.querySelector('#ocr-file-picker')?.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (file) {
-      draftBill.fileName = file.name;
-      draftBill.fileSize = (file.size / (1024 * 1024)).toFixed(1) + " MB";
-      draftBill.ocrConfidence = Math.floor(92 + Math.random() * 7);
-      router.renderCurrentView();
+      await handleFileProcess(file);
     }
   });
 
@@ -380,7 +412,7 @@ export function bindUploadOCREvents(container, router) {
     }
   });
 
-  // Save Bill to Inventory
+  // Save Bill to Inventory & Firestore
   container.querySelector('#ocr-save-bill-btn')?.addEventListener('click', () => {
     const invoiceNum = container.querySelector('#ocr-bill-number').value.trim();
     const invoiceDate = container.querySelector('#ocr-bill-date').value;
@@ -390,11 +422,18 @@ export function bindUploadOCREvents(container, router) {
       return;
     }
 
+    // Check duplicate
+    const duplicate = dbService.checkDuplicateBill(draftBill.distributorId, invoiceNum);
+    if (duplicate) {
+      const confirmDup = confirm(`Duplicate Warning: Bill #${invoiceNum} already exists for ${draftBill.distributorName}. Do you still want to proceed?`);
+      if (!confirmDup) return;
+    }
+
     const subtotal = draftBill.items.reduce((sum, it) => sum + it.taxableValue, 0);
     const gstTotal = draftBill.items.reduce((sum, it) => sum + (it.total - it.taxableValue), 0);
     const grandTotal = subtotal + gstTotal;
 
-    // Save as verified bill
+    // Save as verified bill (triggers Firestore write, batch updates, and price alert checks)
     const saved = dbService.savePurchaseBill({
       ...draftBill,
       invoiceNumber: invoiceNum,
@@ -408,7 +447,7 @@ export function bindUploadOCREvents(container, router) {
       status: "verified"
     });
 
-    alert(`Purchase Bill #${saved.invoiceNumber} from ${saved.distributorName} successfully recorded! Inventory batches have been automatically updated.`);
+    alert(`Purchase Bill #${saved.invoiceNumber} for ${saved.distributorName} successfully recorded in Cloud Firestore!`);
     router.navigate('bills');
   });
 }

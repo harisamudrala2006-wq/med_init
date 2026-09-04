@@ -1,16 +1,44 @@
-// Unified Database Service - Single Source of Truth (Phase 21)
-// All totals (Purchases, Paid, Outstanding, Expiry, Ledger) are computed dynamically.
-
+// Unified Database & Real-Time Firestore Orchestrator Service
+// Bridges frontend views with real-time Cloud Firestore listeners (onSnapshot) and batched persistence.
+import { db, isRealFirebaseConfigured } from '../config/firebase.js';
+import { 
+  collection, 
+  doc, 
+  setDoc, 
+  getDocs, 
+  onSnapshot, 
+  query, 
+  where, 
+  writeBatch 
+} from 'firebase/firestore';
 import { pharmacyState } from '../context/pharmacyState.js';
-import { authState } from '../context/authState.js';
+import { authService } from './authService.js';
+import { distributorService } from './distributorService.js';
+import { billService } from './billService.js';
+import { paymentService } from './paymentService.js';
+import { inventoryService } from './inventoryService.js';
+import { priceAlertService } from './priceAlertService.js';
+import { notificationService } from './notificationService.js';
+import { auditService } from './auditService.js';
 
 const STORAGE_PREFIX = 'medi_db_';
+const COLLECTIONS = [
+  'distributors', 
+  'products', 
+  'batches', 
+  'purchaseBills', 
+  'payments', 
+  'receipts',
+  'adjustments', 
+  'priceAlerts', 
+  'notifications', 
+  'auditLogs'
+];
 
-// Initial Clinical Seed Data for Instant Readiness
+// Seed Data for Initial Pharmacy Setup
 const SEED_DISTRIBUTORS = [
   {
     id: "dist_abc_pharma",
-    pharmacyId: "pharmacy_sri_maheswari",
     name: "ABC Pharma Distributors Ltd.",
     gstin: "37AABCA1234F1Z0",
     dlNumber: "20B/21B-TG-2019",
@@ -23,7 +51,6 @@ const SEED_DISTRIBUTORS = [
   },
   {
     id: "dist_apex_medilink",
-    pharmacyId: "pharmacy_sri_maheswari",
     name: "Apex Medilink Lifecare LLP",
     gstin: "37AAPEX9876E1Z5",
     dlNumber: "20B/21B-AP-2021",
@@ -36,7 +63,6 @@ const SEED_DISTRIBUTORS = [
   },
   {
     id: "dist_sterling_health",
-    pharmacyId: "pharmacy_sri_maheswari",
     name: "Sterling Healthcare Supply Co.",
     gstin: "37ASTLH4321D1ZQ",
     dlNumber: "20B/21B-TG-2020",
@@ -49,7 +75,6 @@ const SEED_DISTRIBUTORS = [
   },
   {
     id: "dist_cipla_depot",
-    pharmacyId: "pharmacy_sri_maheswari",
     name: "Cipla Authorized Depot",
     gstin: "37ACIPD5678K1ZR",
     dlNumber: "20B/21B-AP-2018",
@@ -65,7 +90,6 @@ const SEED_DISTRIBUTORS = [
 const SEED_PRODUCTS = [
   {
     id: "prod_aug_625",
-    pharmacyId: "pharmacy_sri_maheswari",
     name: "Augmentin 625 Duo Tablet",
     genericSalt: "Amoxicillin (500mg) + Clavulanic Acid (125mg)",
     manufacturer: "GSK Pharmaceuticals Ltd",
@@ -76,7 +100,6 @@ const SEED_PRODUCTS = [
   },
   {
     id: "prod_pan_d",
-    pharmacyId: "pharmacy_sri_maheswari",
     name: "Pan-D Capsule",
     genericSalt: "Pantoprazole (40mg) + Domperidone (30mg)",
     manufacturer: "Alkem Laboratories",
@@ -87,7 +110,6 @@ const SEED_PRODUCTS = [
   },
   {
     id: "prod_dolo_650",
-    pharmacyId: "pharmacy_sri_maheswari",
     name: "Dolo 650 Tablet",
     genericSalt: "Paracetamol (650mg)",
     manufacturer: "Micro Labs Ltd",
@@ -98,7 +120,6 @@ const SEED_PRODUCTS = [
   },
   {
     id: "prod_azith_500",
-    pharmacyId: "pharmacy_sri_maheswari",
     name: "Azithral 500 Tablet",
     genericSalt: "Azithromycin (500mg)",
     manufacturer: "Alembic Pharmaceuticals",
@@ -109,7 +130,6 @@ const SEED_PRODUCTS = [
   },
   {
     id: "prod_glyc_m",
-    pharmacyId: "pharmacy_sri_maheswari",
     name: "Glycomet-GP 2 Forte Tablet",
     genericSalt: "Glimepiride (2mg) + Metformin (1000mg)",
     manufacturer: "USV Ltd",
@@ -123,7 +143,6 @@ const SEED_PRODUCTS = [
 const SEED_PURCHASE_BILLS = [
   {
     id: "bill_inv_8891",
-    pharmacyId: "pharmacy_sri_maheswari",
     distributorId: "dist_abc_pharma",
     distributorName: "ABC Pharma Distributors Ltd.",
     invoiceNumber: "INV-2024-8891",
@@ -156,203 +175,50 @@ const SEED_PURCHASE_BILLS = [
         gstRate: 12,
         taxableValue: 2112.00,
         total: 2365.44
-      },
-      {
-        productId: "prod_dolo_650",
-        productName: "Dolo 650 Tablet",
-        genericSalt: "Paracetamol (650mg)",
-        batchNumber: "DL-8832",
-        expiryDate: "2025-04-15", // Expiring soon (<60 days)
-        quantity: 50,
-        packSize: "15 Tabs",
-        purchaseRate: 24.50,
-        discount: 2.0,
-        gstRate: 12,
-        taxableValue: 1200.50,
-        total: 1344.56
       }
     ],
-    subtotal: 4666.25,
-    cgst: 260.00,
-    sgst: 260.00,
+    subtotal: 3465.75,
+    cgst: 207.95,
+    sgst: 207.95,
     igst: 0,
-    totalTax: 520.00,
-    grandTotal: 5226.20,
+    totalTax: 415.90,
+    grandTotal: 3881.65,
     status: "verified",
-    notes: "Regular monthly bulk order",
-    createdAt: "2024-10-24T14:32:00Z"
-  },
-  {
-    id: "bill_inv_9941",
-    pharmacyId: "pharmacy_sri_maheswari",
-    distributorId: "dist_apex_medilink",
-    distributorName: "Apex Medilink Lifecare LLP",
-    invoiceNumber: "INV-2024-9941",
-    invoiceDate: "2024-10-18",
-    items: [
-      {
-        productId: "prod_azith_500",
-        productName: "Azithral 500 Tablet",
-        genericSalt: "Azithromycin (500mg)",
-        batchNumber: "AZ-4410",
-        expiryDate: "2026-10-31",
-        quantity: 30,
-        packSize: "5 Tabs",
-        purchaseRate: 72.00,
-        discount: 3.0,
-        gstRate: 12,
-        taxableValue: 2095.20,
-        total: 2346.62
-      },
-      {
-        productId: "prod_glyc_m",
-        productName: "Glycomet-GP 2 Forte Tablet",
-        genericSalt: "Glimepiride (2mg) + Metformin (1000mg)",
-        batchNumber: "GLY-3319",
-        expiryDate: "2025-03-28", // Expiring very soon (<30 days)
-        quantity: 25,
-        packSize: "15 Tabs",
-        purchaseRate: 128.00,
-        discount: 5.0,
-        gstRate: 12,
-        taxableValue: 3040.00,
-        total: 3404.80
-      }
-    ],
-    subtotal: 5135.20,
-    cgst: 308.11,
-    sgst: 308.11,
-    igst: 0,
-    totalTax: 616.22,
-    grandTotal: 5751.42,
-    status: "verified",
-    notes: "Urgent diabetic stock replenishment",
-    createdAt: "2024-10-18T10:15:00Z"
-  },
-  {
-    id: "bill_inv_cip_1102",
-    pharmacyId: "pharmacy_sri_maheswari",
-    distributorId: "dist_cipla_depot",
-    distributorName: "Cipla Authorized Depot",
-    invoiceNumber: "INV-1102",
-    invoiceDate: "2024-10-22",
-    items: [
-      {
-        productId: "prod_aug_625",
-        productName: "Augmentin 625 Duo Tablet",
-        genericSalt: "Amoxicillin (500mg) + Clavulanic Acid (125mg)",
-        batchNumber: "CP-AUG-01",
-        expiryDate: "2027-01-31",
-        quantity: 200,
-        packSize: "10 Tabs",
-        purchaseRate: 131.70, // Cheaper than ABC Pharma
-        discount: 6.0,
-        gstRate: 12,
-        taxableValue: 24759.60,
-        total: 27730.75
-      }
-    ],
-    subtotal: 24759.60,
-    cgst: 1485.58,
-    sgst: 1485.58,
-    igst: 0,
-    totalTax: 2971.15,
-    grandTotal: 27730.75,
-    status: "verified",
-    notes: "Direct depot quarterly dispatch",
-    createdAt: "2024-10-22T16:00:00Z"
-  },
-  {
-    id: "bill_inv_ocr_pending",
-    pharmacyId: "pharmacy_sri_maheswari",
-    distributorId: "dist_sterling_health",
-    distributorName: "Sterling Healthcare Supply Co.",
-    invoiceNumber: "INV-2024-7740",
-    invoiceDate: "2024-10-25",
-    items: [
-      {
-        productId: "prod_pan_d",
-        productName: "Pan-D Capsule",
-        genericSalt: "Pantoprazole (40mg) + Domperidone (30mg)",
-        batchNumber: "PND-7701",
-        expiryDate: "2026-12-31",
-        quantity: 40,
-        packSize: "15 Caps",
-        purchaseRate: 112.00,
-        discount: 3.0,
-        gstRate: 12,
-        taxableValue: 4345.60,
-        total: 4867.07
-      }
-    ],
-    subtotal: 4345.60,
-    cgst: 260.74,
-    sgst: 260.74,
-    igst: 0,
-    totalTax: 521.48,
-    grandTotal: 4867.08,
-    status: "needs_verification",
-    notes: "Scanned via mobile camera; review required",
-    createdAt: "2024-10-25T11:20:00Z"
+    notes: "Verified delivery against PO #8891",
+    createdAt: "2024-10-24T14:20:00Z"
   }
 ];
 
 const SEED_PAYMENTS = [
   {
-    id: "pay_rec_101",
-    pharmacyId: "pharmacy_sri_maheswari",
+    id: "pay_rec_4401",
     distributorId: "dist_abc_pharma",
     distributorName: "ABC Pharma Distributors Ltd.",
-    amount: 3000.00,
+    amount: 3881.65,
     paymentDate: "2024-10-25",
-    paymentMethod: "bank_transfer",
-    referenceNumber: "HDFC-NEFT-991203",
-    status: "verified",
-    allocatedBills: [{ billId: "bill_inv_8891", allocatedAmount: 3000.00 }],
-    receiptUrl: "https://example.com/receipt101.jpg",
-    createdAt: "2024-10-25T09:15:00Z"
-  },
-  {
-    id: "pay_rec_102",
-    pharmacyId: "pharmacy_sri_maheswari",
-    distributorId: "dist_cipla_depot",
-    distributorName: "Cipla Authorized Depot",
-    amount: 15000.00,
-    paymentDate: "2024-10-23",
     paymentMethod: "upi",
-    referenceNumber: "UPI-42991028371",
+    referenceNumber: "UPI-9923884100",
     status: "verified",
-    allocatedBills: [{ billId: "bill_inv_cip_1102", allocatedAmount: 15000.00 }],
-    receiptUrl: "",
-    createdAt: "2024-10-23T14:40:00Z"
-  }
-];
-
-const SEED_AUDIT_LOGS = [
-  {
-    id: "log_01",
-    pharmacyId: "pharmacy_sri_maheswari",
-    userId: "usr_staff_01",
-    userName: "Dr. K. Rama Rao",
-    action: "Bill Verified",
-    details: "Purchase bill INV-2024-8891 from ABC Pharma verified and stock updated.",
-    timestamp: "2024-10-24T14:45:00Z"
-  },
-  {
-    id: "log_02",
-    pharmacyId: "pharmacy_sri_maheswari",
-    userId: "usr_staff_01",
-    userName: "Dr. K. Rama Rao",
-    action: "Payment Recorded",
-    details: "Recorded NEFT payment of ₹3,000.00 to ABC Pharma Distributors Ltd.",
-    timestamp: "2024-10-25T09:20:00Z"
+    notes: "Full payment for Bill INV-2024-8891",
+    createdAt: "2024-10-25T11:00:00Z"
   }
 ];
 
 class DatabaseService {
   constructor() {
     this.listeners = new Set();
+    this.activeUnsubscribers = [];
     this.initStorage();
+    this.initFirestoreSync();
+
+    // Re-sync with Firestore whenever authenticated pharmacy changes
+    authService.subscribe((user) => {
+      this.initFirestoreSync();
+    });
+  }
+
+  get activePharmacyId() {
+    return authService.user?.pharmacyId || pharmacyState.profile.id || 'pharmacy_sri_maheswari';
   }
 
   initStorage() {
@@ -368,12 +234,68 @@ class DatabaseService {
     if (!localStorage.getItem(STORAGE_PREFIX + 'payments')) {
       localStorage.setItem(STORAGE_PREFIX + 'payments', JSON.stringify(SEED_PAYMENTS));
     }
+    if (!localStorage.getItem(STORAGE_PREFIX + 'batches')) {
+      localStorage.setItem(STORAGE_PREFIX + 'batches', JSON.stringify([]));
+    }
+    if (!localStorage.getItem(STORAGE_PREFIX + 'receipts')) {
+      localStorage.setItem(STORAGE_PREFIX + 'receipts', JSON.stringify([]));
+    }
     if (!localStorage.getItem(STORAGE_PREFIX + 'auditLogs')) {
-      localStorage.setItem(STORAGE_PREFIX + 'auditLogs', JSON.stringify(SEED_AUDIT_LOGS));
+      localStorage.setItem(STORAGE_PREFIX + 'auditLogs', JSON.stringify([]));
     }
     if (!localStorage.getItem(STORAGE_PREFIX + 'adjustments')) {
       localStorage.setItem(STORAGE_PREFIX + 'adjustments', JSON.stringify([]));
     }
+    if (!localStorage.getItem(STORAGE_PREFIX + 'priceAlerts')) {
+      localStorage.setItem(STORAGE_PREFIX + 'priceAlerts', JSON.stringify([]));
+    }
+    if (!localStorage.getItem(STORAGE_PREFIX + 'notifications')) {
+      localStorage.setItem(STORAGE_PREFIX + 'notifications', JSON.stringify([]));
+    }
+  }
+
+  /**
+   * Subscribes to real-time Cloud Firestore updates via onSnapshot
+   */
+  initFirestoreSync() {
+    if (!db || !isRealFirebaseConfigured) return;
+
+    // Clean up any existing listeners
+    this.activeUnsubscribers.forEach(unsub => {
+      try { unsub(); } catch (e) {}
+    });
+    this.activeUnsubscribers = [];
+
+    const pharmacyId = this.activePharmacyId;
+
+    COLLECTIONS.forEach(collectionName => {
+      try {
+        const colRef = collection(db, collectionName);
+        // Scoped by pharmacyId to ensure multi-tenant isolation
+        const q = query(colRef, where('pharmacyId', '==', pharmacyId));
+
+        const unsub = onSnapshot(q, (snapshot) => {
+          if (snapshot.empty) {
+            // First time this pharmacy accesses this collection: seed to Firestore if distributors or products
+            const local = this.getCollection(collectionName);
+            if (local && local.length > 0) {
+              local.forEach(item => this.saveToFirestore(collectionName, item));
+            }
+            return;
+          }
+
+          const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+          localStorage.setItem(STORAGE_PREFIX + collectionName, JSON.stringify(items));
+          this.notify();
+        }, (err) => {
+          console.warn(`Firestore real-time sync for ${collectionName}:`, err);
+        });
+
+        this.activeUnsubscribers.push(unsub);
+      } catch (err) {
+        console.warn(`Could not attach listener for ${collectionName}:`, err);
+      }
+    });
   }
 
   getCollection(name) {
@@ -392,6 +314,21 @@ class DatabaseService {
       this.notify();
     } catch (e) {
       console.warn(`Error writing collection ${name}:`, e);
+    }
+  }
+
+  async saveToFirestore(collectionName, item) {
+    if (!db || !isRealFirebaseConfigured || !item || !item.id) return;
+    try {
+      const docRef = doc(db, collectionName, String(item.id));
+      const payload = {
+        ...item,
+        pharmacyId: item.pharmacyId || this.activePharmacyId,
+        updatedAt: new Date().toISOString()
+      };
+      await setDoc(docRef, payload, { merge: true });
+    } catch (e) {
+      console.warn(`Firestore setDoc error for ${collectionName}/${item.id}:`, e);
     }
   }
 
@@ -420,57 +357,39 @@ class DatabaseService {
     const newDist = {
       ...distributor,
       id: distributor.id || `dist_${Date.now()}`,
-      pharmacyId: pharmacyState.profile.id,
-      createdAt: new Date().toISOString()
+      pharmacyId: this.activePharmacyId,
+      createdAt: distributor.createdAt || new Date().toISOString()
     };
     list.unshift(newDist);
     this.saveCollection('distributors', list);
-    this.logAudit("Distributor Added", `Added new distributor: ${newDist.name}`);
+    this.saveToFirestore('distributors', newDist);
+
+    this.logAudit("Distributor Added", "distributors", newDist.id, `Added distributor: ${newDist.name}`);
     return newDist;
   }
 
   // ==========================================
-  // SINGLE SOURCE OF TRUTH: FINANCIAL LEDGER
+  // FINANCIAL LEDGER (Single Source of Truth)
   // Outstanding = Sum(Verified Purchases) - Sum(Verified Payments)
   // ==========================================
   getDistributorFinances(distributorId) {
-    const bills = this.getPurchaseBills().filter(b => b.distributorId === distributorId && b.status === 'verified');
-    const payments = this.getPayments().filter(p => p.distributorId === distributorId && p.status === 'verified');
-
-    const totalPurchases = bills.reduce((sum, b) => sum + Number(b.grandTotal || 0), 0);
-    const totalPaid = payments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
-    const outstanding = Math.max(0, totalPurchases - totalPaid);
-
-    return {
-      totalPurchases,
-      totalPaid,
-      outstanding,
-      billCount: bills.length,
-      paymentCount: payments.length,
-      bills,
-      payments
-    };
+    const verifiedBills = this.getPurchaseBills().filter(b => b.status === 'verified');
+    const verifiedPayments = this.getPayments().filter(p => p.status === 'verified');
+    return distributorService.calculateLedger(distributorId, verifiedBills, verifiedPayments);
   }
 
   getOverallFinances() {
     const verifiedBills = this.getPurchaseBills().filter(b => b.status === 'verified');
     const verifiedPayments = this.getPayments().filter(p => p.status === 'verified');
-
-    const totalPurchases = verifiedBills.reduce((sum, b) => sum + Number(b.grandTotal || 0), 0);
-    const totalPaid = verifiedPayments.reduce((sum, p) => sum + Number(p.amount || 0), 0);
-    const totalOutstanding = Math.max(0, totalPurchases - totalPaid);
-
     const pendingBills = this.getPurchaseBills().filter(b => b.status === 'needs_verification');
     const expiringBatches = this.getExpiringBatches(60);
 
-    return {
-      totalPurchases,
-      totalPaid,
-      totalOutstanding,
-      invoiceCount: verifiedBills.length,
-      pendingVerificationCount: pendingBills.length,
-      expiringCount: expiringBatches.length
-    };
+    return distributorService.calculateOverallFinances(
+      verifiedBills, 
+      verifiedPayments, 
+      pendingBills, 
+      expiringBatches
+    );
   }
 
   // ==========================================
@@ -485,13 +404,7 @@ class DatabaseService {
   }
 
   checkDuplicateBill(distributorId, invoiceNumber) {
-    if (!distributorId || !invoiceNumber) return null;
-    const cleanNum = invoiceNumber.trim().toLowerCase();
-    const existing = this.getPurchaseBills().find(
-      b => b.distributorId === distributorId && 
-           b.invoiceNumber.trim().toLowerCase() === cleanNum
-    );
-    return existing || null;
+    return billService.checkDuplicate(this.getPurchaseBills(), distributorId, invoiceNumber);
   }
 
   savePurchaseBill(billData) {
@@ -499,7 +412,7 @@ class DatabaseService {
     const newBill = {
       ...billData,
       id: billData.id || `bill_${Date.now()}`,
-      pharmacyId: pharmacyState.profile.id,
+      pharmacyId: this.activePharmacyId,
       createdAt: billData.createdAt || new Date().toISOString()
     };
 
@@ -511,14 +424,17 @@ class DatabaseService {
     }
 
     this.saveCollection('purchaseBills', bills);
+    this.saveToFirestore('purchaseBills', newBill);
 
-    // If verified, update inventory batches automatically!
+    // If verified, update inventory batches & check price alerts automatically
     if (newBill.status === 'verified') {
       this.syncBillItemsToInventory(newBill);
     }
 
     this.logAudit(
       existingIndex >= 0 ? "Bill Updated" : "Bill Created",
+      "purchaseBills",
+      newBill.id,
       `Invoice #${newBill.invoiceNumber} for ${newBill.distributorName} (${newBill.status})`
     );
 
@@ -537,24 +453,27 @@ class DatabaseService {
     const newPayment = {
       ...paymentData,
       id: paymentData.id || `pay_${Date.now()}`,
-      pharmacyId: pharmacyState.profile.id,
+      pharmacyId: this.activePharmacyId,
       status: paymentData.status || 'verified',
       createdAt: paymentData.createdAt || new Date().toISOString()
     };
 
     payments.unshift(newPayment);
     this.saveCollection('payments', payments);
+    this.saveToFirestore('payments', newPayment);
 
     this.logAudit(
       "Payment Recorded",
-      `₹${newPayment.amount.toFixed(2)} to ${newPayment.distributorName} via ${newPayment.paymentMethod.toUpperCase()}`
+      "payments",
+      newPayment.id,
+      `₹${Number(newPayment.amount).toFixed(2)} to ${newPayment.distributorName} via ${newPayment.paymentMethod.toUpperCase()}`
     );
 
     return newPayment;
   }
 
   // ==========================================
-  // INVENTORY & BATCH TRACKING (Phase 11 & 12)
+  // INVENTORY & BATCH TRACKING
   // ==========================================
   syncBillItemsToInventory(bill) {
     const products = this.getCollection('products');
@@ -566,7 +485,7 @@ class DatabaseService {
       if (!product) {
         product = {
           id: `prod_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-          pharmacyId: pharmacyState.profile.id,
+          pharmacyId: this.activePharmacyId,
           name: item.productName,
           genericSalt: item.genericSalt || "Essential Medicine Salt",
           category: "Prescription",
@@ -574,6 +493,18 @@ class DatabaseService {
           defaultPackSize: item.packSize || "10 Units"
         };
         products.push(product);
+        this.saveToFirestore('products', product);
+      }
+
+      // Check for price anomaly
+      const priceAlert = priceAlertService.detectPriceDifference(item, batches);
+      if (priceAlert) {
+        this.addPriceAlert({
+          ...priceAlert,
+          billId: bill.id,
+          distributorId: bill.distributorId,
+          distributorName: bill.distributorName
+        });
       }
 
       // Add or update batch
@@ -586,10 +517,11 @@ class DatabaseService {
         existingBatch.distributorId = bill.distributorId;
         existingBatch.distributorName = bill.distributorName;
         existingBatch.expiryDate = item.expiryDate;
+        this.saveToFirestore('batches', existingBatch);
       } else {
-        batches.unshift({
+        const newBatch = {
           id: batchId,
-          pharmacyId: pharmacyState.profile.id,
+          pharmacyId: this.activePharmacyId,
           productId: product.id,
           productName: item.productName,
           genericSalt: product.genericSalt,
@@ -598,12 +530,14 @@ class DatabaseService {
           packSize: item.packSize,
           quantityInUnits: Number(item.quantity) * 10,
           purchaseRate: Number(item.purchaseRate),
-          mrp: Number(item.purchaseRate) * 1.25, // Default margin
+          mrp: Number(item.purchaseRate) * 1.25,
           distributorId: bill.distributorId,
           distributorName: bill.distributorName,
           billId: bill.id,
           createdAt: new Date().toISOString()
-        });
+        };
+        batches.unshift(newBatch);
+        this.saveToFirestore('batches', newBatch);
       }
     });
 
@@ -614,14 +548,13 @@ class DatabaseService {
   getBatches() {
     let batches = this.getCollection('batches');
     if (!batches || batches.length === 0) {
-      // Synthesize batches from verified bills on initial start
       const bills = this.getPurchaseBills().filter(b => b.status === 'verified');
       batches = [];
       bills.forEach(bill => {
         (bill.items || []).forEach(item => {
           batches.push({
             id: `batch_${item.batchNumber}`,
-            pharmacyId: pharmacyState.profile.id,
+            pharmacyId: this.activePharmacyId,
             productName: item.productName,
             genericSalt: item.genericSalt || "Active Pharmaceutical Ingredient",
             batchNumber: item.batchNumber,
@@ -641,7 +574,7 @@ class DatabaseService {
     return batches;
   }
 
-  adjustInventory(batchId, quantityChange, reason) {
+  adjustInventory(batchId, quantityChange, reason, notes = '') {
     const batches = this.getBatches();
     const batch = batches.find(b => b.id === batchId);
     if (!batch) return false;
@@ -650,158 +583,135 @@ class DatabaseService {
     batch.quantityInUnits = Math.max(0, batch.quantityInUnits + Number(quantityChange));
 
     const adjustments = this.getCollection('adjustments');
-    adjustments.unshift({
+    const adjRecord = {
       id: `adj_${Date.now()}`,
-      pharmacyId: pharmacyState.profile.id,
+      pharmacyId: this.activePharmacyId,
       batchId,
       productName: batch.productName,
       batchNumber: batch.batchNumber,
       oldQty,
       newQty: batch.quantityInUnits,
-      change: Number(quantityChange),
-      reason,
-      user: authState.user?.displayName || "Pharmacist",
-      timestamp: new Date().toISOString()
-    });
+      quantityChange: Number(quantityChange),
+      reason, // 'Damaged' | 'Expired' | 'Lost' | 'Stock Correction' | 'Manual Addition'
+      notes,
+      userId: authService.user?.uid || "usr_system",
+      userName: authService.user?.fullName || "Pharmacist",
+      createdAt: new Date().toISOString()
+    };
 
+    adjustments.unshift(adjRecord);
     this.saveCollection('batches', batches);
     this.saveCollection('adjustments', adjustments);
-    this.logAudit("Stock Adjusted", `${batch.productName} (B.No: ${batch.batchNumber}) adjusted by ${quantityChange} units. Reason: ${reason}`);
+
+    this.saveToFirestore('batches', batch);
+    this.saveToFirestore('adjustments', adjRecord);
+
+    this.logAudit(
+      "Inventory Adjusted",
+      "batches",
+      batchId,
+      `${batch.productName} (Batch ${batch.batchNumber}): ${quantityChange > 0 ? '+' : ''}${quantityChange} units (${reason})`
+    );
+
     return true;
   }
 
-  // ==========================================
-  // EXPIRY CALCULATIONS (Phase 12)
-  // ==========================================
-  getExpiringBatches(daysThreshold = 90) {
-    const batches = this.getBatches();
-    const now = new Date();
-    const targetDate = new Date();
-    targetDate.setDate(now.getDate() + daysThreshold);
-
-    return batches.filter(batch => {
-      const exp = new Date(batch.expiryDate);
-      return exp <= targetDate;
-    }).map(batch => {
-      const exp = new Date(batch.expiryDate);
-      const diffTime = exp - now;
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      let status = 'safe';
-      if (diffDays <= 0) status = 'expired';
-      else if (diffDays <= 30) status = 'critical';
-      else if (diffDays <= 60) status = 'warning';
-      else status = 'attention';
-
-      return {
-        ...batch,
-        daysLeft: diffDays,
-        expiryCategory: status
-      };
-    }).sort((a, b) => a.daysLeft - b.daysLeft);
+  getExpiringBatches(days = 60) {
+    return inventoryService.filterBatchesByExpiry(this.getBatches(), days);
   }
 
   // ==========================================
-  // PRICE ANOMALY DETECTION (Phase 13)
-  // Non-accusatory: "Price Difference Detected"
+  // PRICE ALERTS & ANOMALIES
   // ==========================================
+  getPriceAlerts() {
+    return this.getCollection('priceAlerts');
+  }
+
   getPriceAnomalies() {
-    const bills = this.getPurchaseBills().filter(b => b.status === 'verified');
-    const productPrices = {};
+    return this.getPriceAlerts();
+  }
 
-    bills.forEach(bill => {
-      (bill.items || []).forEach(item => {
-        const normKey = item.productName.trim().toLowerCase();
-        if (!productPrices[normKey]) {
-          productPrices[normKey] = [];
-        }
-        productPrices[normKey].push({
-          productName: item.productName,
-          genericSalt: item.genericSalt,
-          distributorName: bill.distributorName,
-          distributorId: bill.distributorId,
-          rate: Number(item.purchaseRate),
-          date: bill.invoiceDate
-        });
-      });
-    });
-
-    const anomalies = [];
-    Object.keys(productPrices).forEach(key => {
-      const entries = productPrices[key];
-      if (entries.length >= 2) {
-        // Find min and max rate
-        entries.sort((a, b) => a.rate - b.rate);
-        const lowest = entries[0];
-        const highest = entries[entries.length - 1];
-
-        if (highest.rate > lowest.rate && highest.distributorId !== lowest.distributorId) {
-          const diff = highest.rate - lowest.rate;
-          const pct = ((diff / lowest.rate) * 100).toFixed(1);
-
-          anomalies.push({
-            id: `anom_${highest.productName.replace(/\s+/g, '_')}`,
-            productName: highest.productName,
-            genericSalt: highest.genericSalt,
-            distributorA: highest.distributorName,
-            rateA: highest.rate,
-            distributorB: lowest.distributorName,
-            rateB: lowest.rate,
-            difference: diff,
-            pctDiff: pct,
-            severity: pct > 15 ? 'high' : 'medium'
-          });
-        }
-      }
-    });
-
-    return anomalies;
+  addPriceAlert(alertData) {
+    const alerts = this.getPriceAlerts();
+    const newAlert = {
+      ...alertData,
+      id: alertData.id || `alert_${Date.now()}`,
+      pharmacyId: this.activePharmacyId,
+      createdAt: new Date().toISOString()
+    };
+    alerts.unshift(newAlert);
+    this.saveCollection('priceAlerts', alerts);
+    this.saveToFirestore('priceAlerts', newAlert);
+    return newAlert;
   }
 
   // ==========================================
-  // REVIEW CENTER UNIFIED INBOX (Phase 14)
+  // NOTIFICATIONS
+  // ==========================================
+  getNotifications() {
+    return this.getCollection('notifications');
+  }
+
+  markNotificationAsRead(notificationId) {
+    const notifications = this.getNotifications();
+    const notif = notifications.find(n => n.id === notificationId);
+    if (notif) {
+      notif.isRead = true;
+      this.saveCollection('notifications', notifications);
+      this.saveToFirestore('notifications', notif);
+    }
+  }
+
+  // ==========================================
+  // REVIEW CENTER AGGREGATION
   // ==========================================
   getReviewCenterItems() {
     const items = [];
 
-    // 1. Bills needing verification
-    this.getPurchaseBills().filter(b => b.status === 'needs_verification').forEach(b => {
-      items.push({
-        id: `rev_bill_${b.id}`,
-        type: 'bill_verification',
-        title: `Bill Review: ${b.invoiceNumber}`,
-        subtitle: `${b.distributorName} • Grand Total: ₹${b.grandTotal.toFixed(2)}`,
-        badge: 'Verification Required',
-        urgency: 'high',
-        targetTab: 'bills',
-        data: b
+    // 1. Bills Needing Verification
+    this.getPurchaseBills()
+      .filter(b => b.status === 'needs_verification')
+      .forEach(b => {
+        items.push({
+          id: `rev_bill_${b.id}`,
+          type: 'bill_verification',
+          title: `Verify Invoice #${b.invoiceNumber}`,
+          subtitle: `${b.distributorName} • ₹${Number(b.grandTotal).toFixed(2)}`,
+          targetTab: 'bills',
+          route: 'bills',
+          badge: 'Needs Review',
+          urgency: 'high',
+          severity: 'warning'
+        });
       });
-    });
 
-    // 2. Expiring stock (< 30 days)
+    // 2. Critical Expiry Batches (<30 days)
     this.getExpiringBatches(30).forEach(batch => {
       items.push({
         id: `rev_exp_${batch.id}`,
         type: 'expiry_alert',
-        title: `Near Expiry: ${batch.productName}`,
-        subtitle: `Batch: ${batch.batchNumber} • ${batch.daysLeft <= 0 ? 'Expired' : `Expires in ${batch.daysLeft} days`} (${batch.quantityInUnits} units)`,
-        badge: batch.daysLeft <= 0 ? 'Expired' : 'Critical Expiry',
-        urgency: 'high',
+        title: `Expiry Warning: ${batch.productName}`,
+        subtitle: `Batch ${batch.batchNumber} expires on ${batch.expiryDate} (${batch.quantityInUnits} units left)`,
         targetTab: 'inventory',
-        data: batch
+        route: 'inventory',
+        badge: 'Critical Expiry',
+        urgency: 'high',
+        severity: 'error'
       });
     });
 
     // 3. Price Anomalies
-    this.getPriceAnomalies().forEach(a => {
+    this.getPriceAlerts().slice(0, 5).forEach(alert => {
       items.push({
-        id: `rev_anom_${a.id}`,
+        id: `rev_price_${alert.id}`,
         type: 'price_anomaly',
-        title: `Price Difference: ${a.productName}`,
-        subtitle: `${a.distributorA} charges ₹${a.rateA} vs ${a.distributorB} ₹${a.rateB} (+${a.pctDiff}%)`,
-        badge: 'Price Difference Detected',
-        urgency: 'medium',
+        title: alert.alertType || "Potential Price Anomaly",
+        subtitle: alert.message,
         targetTab: 'bills',
-        data: a
+        route: 'bills',
+        badge: 'Price Anomaly',
+        urgency: 'medium',
+        severity: 'warning'
       });
     });
 
@@ -809,24 +719,29 @@ class DatabaseService {
   }
 
   // ==========================================
-  // AUDIT LOGS (Phase 17)
+  // AUDIT LOGS
   // ==========================================
   getAuditLogs() {
     return this.getCollection('auditLogs');
   }
 
-  logAudit(action, details) {
+  logAudit(action, entity, entityId, details) {
     const logs = this.getAuditLogs();
-    logs.unshift({
-      id: `log_${Date.now()}`,
-      pharmacyId: pharmacyState.profile.id,
-      userId: authState.user?.uid || "usr_guest",
-      userName: authState.user?.displayName || "Dr. K. Rama Rao",
+    const user = authService.user;
+    const newLog = auditService.createAuditRecord({
+      pharmacyId: this.activePharmacyId,
+      userId: user?.uid || "usr_system",
+      userName: user?.fullName || "Pharmacist",
       action,
-      details,
-      timestamp: new Date().toISOString()
+      entity,
+      entityId,
+      details
     });
-    this.saveCollection('auditLogs', logs.slice(0, 100)); // Keep recent 100
+
+    logs.unshift(newLog);
+    this.saveCollection('auditLogs', logs);
+    this.saveToFirestore('auditLogs', newLog);
+    return newLog;
   }
 }
 
