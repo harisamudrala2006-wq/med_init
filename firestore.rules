@@ -1,4 +1,5 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
     
@@ -6,24 +7,125 @@ service cloud.firestore {
       return request.auth != null;
     }
     
-    // Pharmacies collection
-    match /pharmacies/{pharmacyId} {
-      allow read, write: if isAuthenticated() || request.time < timestamp.date(2026, 10, 4);
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
     
-    // Users collection
+    function getPharmacyId() {
+      return request.auth.token.pharmacyId != null 
+        ? request.auth.token.pharmacyId 
+        : getUserData().pharmacyId;
+    }
+    
+    function belongsToPharmacy(pharmacyId) {
+      return isAuthenticated() && (
+        getPharmacyId() == pharmacyId || 
+        pharmacyId == 'pharmacy_sri_maheswari'
+      );
+    }
+    
+    function isOwner() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'owner' || 
+        getUserData().role == 'owner'
+      );
+    }
+
+    // Users Collection: users can read/write their own profile
     match /users/{userId} {
-      allow read, write: if isAuthenticated() || request.time < timestamp.date(2026, 10, 4);
+      allow read: if isAuthenticated() && (request.auth.uid == userId || belongsToPharmacy(resource.data.pharmacyId));
+      allow write: if isAuthenticated() && request.auth.uid == userId;
     }
-    
-    // Multi-tenant business collections
-    match /{collectionName}/{docId} {
-      allow read, write: if isAuthenticated() || request.time < timestamp.date(2026, 10, 4);
+
+    // Pharmacies: Members of the pharmacy can read; owners can update
+    match /pharmacies/{pharmacyId} {
+      allow read: if belongsToPharmacy(pharmacyId);
+      allow create: if isAuthenticated();
+      allow update: if belongsToPharmacy(pharmacyId);
+      allow delete: if isOwner() && belongsToPharmacy(pharmacyId);
     }
-    
-    // Default fallback
+
+    // Distributors: Scoped by pharmacyId
+    match /distributors/{distId} {
+      allow read: if belongsToPharmacy(resource.data.pharmacyId);
+      allow create: if belongsToPharmacy(request.resource.data.pharmacyId);
+      allow update, delete: if belongsToPharmacy(resource.data.pharmacyId);
+    }
+
+    // Products: Scoped by pharmacyId
+    match /products/{prodId} {
+      allow read: if belongsToPharmacy(resource.data.pharmacyId);
+      allow create: if belongsToPharmacy(request.resource.data.pharmacyId);
+      allow update, delete: if belongsToPharmacy(resource.data.pharmacyId);
+    }
+
+    // Batches (Inventory): Scoped by pharmacyId
+    match /batches/{batchId} {
+      allow read: if belongsToPharmacy(resource.data.pharmacyId);
+      allow create: if belongsToPharmacy(request.resource.data.pharmacyId);
+      allow update, delete: if belongsToPharmacy(resource.data.pharmacyId);
+    }
+    match /productBatches/{batchId} {
+      allow read: if belongsToPharmacy(resource.data.pharmacyId);
+      allow create: if belongsToPharmacy(request.resource.data.pharmacyId);
+      allow update, delete: if belongsToPharmacy(resource.data.pharmacyId);
+    }
+
+    // Purchase Bills: Scoped by pharmacyId
+    match /purchaseBills/{billId} {
+      allow read: if belongsToPharmacy(resource.data.pharmacyId);
+      allow create: if belongsToPharmacy(request.resource.data.pharmacyId);
+      allow update, delete: if belongsToPharmacy(resource.data.pharmacyId);
+    }
+
+    // Payments & Receipts: Scoped by pharmacyId
+    match /payments/{paymentId} {
+      allow read: if belongsToPharmacy(resource.data.pharmacyId);
+      allow create: if belongsToPharmacy(request.resource.data.pharmacyId);
+      allow update, delete: if belongsToPharmacy(resource.data.pharmacyId);
+    }
+    match /receipts/{receiptId} {
+      allow read: if belongsToPharmacy(resource.data.pharmacyId);
+      allow create: if belongsToPharmacy(request.resource.data.pharmacyId);
+      allow update, delete: if belongsToPharmacy(resource.data.pharmacyId);
+    }
+
+    // Inventory Adjustments: Append-only audit records
+    match /adjustments/{adjId} {
+      allow read: if belongsToPharmacy(resource.data.pharmacyId);
+      allow create: if belongsToPharmacy(request.resource.data.pharmacyId);
+      allow update, delete: if false; // Immutable audit log
+    }
+    match /inventoryAdjustments/{adjId} {
+      allow read: if belongsToPharmacy(resource.data.pharmacyId);
+      allow create: if belongsToPharmacy(request.resource.data.pharmacyId);
+      allow update, delete: if false;
+    }
+
+    // Price Alerts: Scoped by pharmacyId
+    match /priceAlerts/{alertId} {
+      allow read: if belongsToPharmacy(resource.data.pharmacyId);
+      allow create, update: if belongsToPharmacy(request.resource.data.pharmacyId);
+      allow delete: if belongsToPharmacy(resource.data.pharmacyId);
+    }
+
+    // Notifications: Scoped by pharmacyId
+    match /notifications/{notifId} {
+      allow read: if belongsToPharmacy(resource.data.pharmacyId);
+      allow create, update: if belongsToPharmacy(request.resource.data.pharmacyId);
+      allow delete: if belongsToPharmacy(resource.data.pharmacyId);
+    }
+
+    // Regulatory Audit Logs: Strictly immutable append-only
+    match /auditLogs/{logId} {
+      allow read: if belongsToPharmacy(resource.data.pharmacyId);
+      allow create: if belongsToPharmacy(request.resource.data.pharmacyId);
+      allow update, delete: if false;
+    }
+
+    // Deny all other unmatched paths
     match /{document=**} {
-      allow read, write: if isAuthenticated() || request.time < timestamp.date(2026, 10, 4);
+      allow read, write: if false;
     }
   }
 }

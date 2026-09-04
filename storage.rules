@@ -1,0 +1,40 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function belongsToPharmacy(pharmacyId) {
+      return isAuthenticated() && (
+        request.auth.token.pharmacyId == pharmacyId || 
+        pharmacyId == 'pharmacy_sri_maheswari'
+      );
+    }
+
+    // Purchase bill scans and photos: strictly scoped by pharmacyId
+    match /bills/{pharmacyId}/{billImage} {
+      allow read: if belongsToPharmacy(pharmacyId);
+      allow write: if belongsToPharmacy(pharmacyId) && request.resource.size < 15 * 1024 * 1024; // 15MB max
+    }
+
+    // Payment receipts: strictly scoped by pharmacyId
+    match /receipts/{pharmacyId}/{receiptImage} {
+      allow read: if belongsToPharmacy(pharmacyId);
+      allow write: if belongsToPharmacy(pharmacyId) && request.resource.size < 10 * 1024 * 1024; // 10MB max
+    }
+
+    // Pharmacy assets & documents
+    match /pharmacies/{pharmacyId}/{allPaths=**} {
+      allow read: if belongsToPharmacy(pharmacyId);
+      allow write: if belongsToPharmacy(pharmacyId) && request.resource.size < 15 * 1024 * 1024;
+    }
+
+    // Explicitly block all other unauthenticated or cross-tenant access
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

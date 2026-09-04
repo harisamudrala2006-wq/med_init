@@ -1,27 +1,26 @@
-// Unified Database & Real-Time Firestore Orchestrator Service
-// Bridges frontend views with real-time Cloud Firestore listeners (onSnapshot) and batched persistence.
+// Real Cloud Firestore Database & Orchestrator Service
+// Single source of truth in Firebase Cloud Firestore. Zero localStorage business data.
 import { db, isRealFirebaseConfigured } from '../config/firebase.js';
 import { 
   collection, 
   doc, 
   setDoc, 
   getDocs, 
+  updateDoc,
   onSnapshot, 
   query, 
   where, 
+  orderBy,
   writeBatch 
 } from 'firebase/firestore';
 import { pharmacyState } from '../context/pharmacyState.js';
 import { authService } from './authService.js';
 import { distributorService } from './distributorService.js';
 import { billService } from './billService.js';
-import { paymentService } from './paymentService.js';
-import { inventoryService } from './inventoryService.js';
 import { priceAlertService } from './priceAlertService.js';
-import { notificationService } from './notificationService.js';
+import { inventoryService } from './inventoryService.js';
 import { auditService } from './auditService.js';
 
-const STORAGE_PREFIX = 'medi_db_';
 const COLLECTIONS = [
   'distributors', 
   'products', 
@@ -35,8 +34,8 @@ const COLLECTIONS = [
   'auditLogs'
 ];
 
-// Seed Data for Initial Pharmacy Setup
-const SEED_DISTRIBUTORS = [
+// Clean initial data seeded directly into Firestore for a new pharmacy
+const INITIAL_DISTRIBUTORS = [
   {
     id: "dist_abc_pharma",
     name: "ABC Pharma Distributors Ltd.",
@@ -87,7 +86,7 @@ const SEED_DISTRIBUTORS = [
   }
 ];
 
-const SEED_PRODUCTS = [
+const INITIAL_PRODUCTS = [
   {
     id: "prod_aug_625",
     name: "Augmentin 625 Duo Tablet",
@@ -127,80 +126,6 @@ const SEED_PRODUCTS = [
     hsnCode: "300420",
     gstRate: 12,
     defaultPackSize: "5 Tablets"
-  },
-  {
-    id: "prod_glyc_m",
-    name: "Glycomet-GP 2 Forte Tablet",
-    genericSalt: "Glimepiride (2mg) + Metformin (1000mg)",
-    manufacturer: "USV Ltd",
-    category: "Antidiabetic",
-    hsnCode: "300490",
-    gstRate: 12,
-    defaultPackSize: "15 Tablets"
-  }
-];
-
-const SEED_PURCHASE_BILLS = [
-  {
-    id: "bill_inv_8891",
-    distributorId: "dist_abc_pharma",
-    distributorName: "ABC Pharma Distributors Ltd.",
-    invoiceNumber: "INV-2024-8891",
-    invoiceDate: "2024-10-24",
-    items: [
-      {
-        productId: "prod_aug_625",
-        productName: "Augmentin 625 Duo Tablet",
-        genericSalt: "Amoxicillin (500mg) + Clavulanic Acid (125mg)",
-        batchNumber: "AUG-2490",
-        expiryDate: "2026-11-30",
-        quantity: 10,
-        packSize: "10 Tabs",
-        purchaseRate: 142.50,
-        discount: 5.0,
-        gstRate: 12,
-        taxableValue: 1353.75,
-        total: 1516.20
-      },
-      {
-        productId: "prod_pan_d",
-        productName: "Pan-D Capsule",
-        genericSalt: "Pantoprazole (40mg) + Domperidone (30mg)",
-        batchNumber: "PND-9921",
-        expiryDate: "2026-08-31",
-        quantity: 20,
-        packSize: "15 Caps",
-        purchaseRate: 110.00,
-        discount: 4.0,
-        gstRate: 12,
-        taxableValue: 2112.00,
-        total: 2365.44
-      }
-    ],
-    subtotal: 3465.75,
-    cgst: 207.95,
-    sgst: 207.95,
-    igst: 0,
-    totalTax: 415.90,
-    grandTotal: 3881.65,
-    status: "verified",
-    notes: "Verified delivery against PO #8891",
-    createdAt: "2024-10-24T14:20:00Z"
-  }
-];
-
-const SEED_PAYMENTS = [
-  {
-    id: "pay_rec_4401",
-    distributorId: "dist_abc_pharma",
-    distributorName: "ABC Pharma Distributors Ltd.",
-    amount: 3881.65,
-    paymentDate: "2024-10-25",
-    paymentMethod: "upi",
-    referenceNumber: "UPI-9923884100",
-    status: "verified",
-    notes: "Full payment for Bill INV-2024-8891",
-    createdAt: "2024-10-25T11:00:00Z"
   }
 ];
 
@@ -208,11 +133,27 @@ class DatabaseService {
   constructor() {
     this.listeners = new Set();
     this.activeUnsubscribers = [];
-    this.initStorage();
+    this.isInitialized = false;
+
+    // Reactive in-memory cache populated directly from Cloud Firestore onSnapshot
+    this.cache = {
+      distributors: [],
+      products: [],
+      batches: [],
+      purchaseBills: [],
+      payments: [],
+      receipts: [],
+      adjustments: [],
+      priceAlerts: [],
+      notifications: [],
+      auditLogs: []
+    };
+
+    // Attach Firestore listeners immediately
     this.initFirestoreSync();
 
-    // Re-sync with Firestore whenever authenticated pharmacy changes
-    authService.subscribe((user) => {
+    // Re-synchronize whenever authenticated user or pharmacy changes
+    authService.subscribe(() => {
       this.initFirestoreSync();
     });
   }
@@ -221,114 +162,70 @@ class DatabaseService {
     return authService.user?.pharmacyId || pharmacyState.profile.id || 'pharmacy_sri_maheswari';
   }
 
-  initStorage() {
-    if (!localStorage.getItem(STORAGE_PREFIX + 'distributors')) {
-      localStorage.setItem(STORAGE_PREFIX + 'distributors', JSON.stringify(SEED_DISTRIBUTORS));
-    }
-    if (!localStorage.getItem(STORAGE_PREFIX + 'products')) {
-      localStorage.setItem(STORAGE_PREFIX + 'products', JSON.stringify(SEED_PRODUCTS));
-    }
-    if (!localStorage.getItem(STORAGE_PREFIX + 'purchaseBills')) {
-      localStorage.setItem(STORAGE_PREFIX + 'purchaseBills', JSON.stringify(SEED_PURCHASE_BILLS));
-    }
-    if (!localStorage.getItem(STORAGE_PREFIX + 'payments')) {
-      localStorage.setItem(STORAGE_PREFIX + 'payments', JSON.stringify(SEED_PAYMENTS));
-    }
-    if (!localStorage.getItem(STORAGE_PREFIX + 'batches')) {
-      localStorage.setItem(STORAGE_PREFIX + 'batches', JSON.stringify([]));
-    }
-    if (!localStorage.getItem(STORAGE_PREFIX + 'receipts')) {
-      localStorage.setItem(STORAGE_PREFIX + 'receipts', JSON.stringify([]));
-    }
-    if (!localStorage.getItem(STORAGE_PREFIX + 'auditLogs')) {
-      localStorage.setItem(STORAGE_PREFIX + 'auditLogs', JSON.stringify([]));
-    }
-    if (!localStorage.getItem(STORAGE_PREFIX + 'adjustments')) {
-      localStorage.setItem(STORAGE_PREFIX + 'adjustments', JSON.stringify([]));
-    }
-    if (!localStorage.getItem(STORAGE_PREFIX + 'priceAlerts')) {
-      localStorage.setItem(STORAGE_PREFIX + 'priceAlerts', JSON.stringify([]));
-    }
-    if (!localStorage.getItem(STORAGE_PREFIX + 'notifications')) {
-      localStorage.setItem(STORAGE_PREFIX + 'notifications', JSON.stringify([]));
-    }
-  }
-
   /**
-   * Subscribes to real-time Cloud Firestore updates via onSnapshot
+   * Initializes real-time Firestore listeners (onSnapshot) for all collections scoped by pharmacyId
    */
   initFirestoreSync() {
-    if (!db || !isRealFirebaseConfigured) return;
-
-    // Clean up any existing listeners
+    // Unsubscribe previous listeners
     this.activeUnsubscribers.forEach(unsub => {
       try { unsub(); } catch (e) {}
     });
     this.activeUnsubscribers = [];
+
+    if (!db || !isRealFirebaseConfigured) return;
 
     const pharmacyId = this.activePharmacyId;
 
     COLLECTIONS.forEach(collectionName => {
       try {
         const colRef = collection(db, collectionName);
-        // Scoped by pharmacyId to ensure multi-tenant isolation
         const q = query(colRef, where('pharmacyId', '==', pharmacyId));
 
-        const unsub = onSnapshot(q, (snapshot) => {
+        const unsub = onSnapshot(q, async (snapshot) => {
           if (snapshot.empty) {
-            // First time this pharmacy accesses this collection: seed to Firestore if distributors or products
-            const local = this.getCollection(collectionName);
-            if (local && local.length > 0) {
-              local.forEach(item => this.saveToFirestore(collectionName, item));
+            // First time this pharmacy accesses this collection in Firestore: seed initial catalogs
+            if (collectionName === 'distributors' && this.cache.distributors.length === 0) {
+              await this.seedInitialCollection('distributors', INITIAL_DISTRIBUTORS);
+            } else if (collectionName === 'products' && this.cache.products.length === 0) {
+              await this.seedInitialCollection('products', INITIAL_PRODUCTS);
+            } else {
+              this.cache[collectionName] = [];
             }
-            return;
+          } else {
+            const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            this.cache[collectionName] = items;
           }
 
-          const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-          localStorage.setItem(STORAGE_PREFIX + collectionName, JSON.stringify(items));
+          this.isInitialized = true;
           this.notify();
         }, (err) => {
-          console.warn(`Firestore real-time sync for ${collectionName}:`, err);
+          console.warn(`Firestore onSnapshot listener for ${collectionName}:`, err);
         });
 
         this.activeUnsubscribers.push(unsub);
       } catch (err) {
-        console.warn(`Could not attach listener for ${collectionName}:`, err);
+        console.warn(`Failed to connect listener for ${collectionName}:`, err);
       }
     });
   }
 
-  getCollection(name) {
+  async seedInitialCollection(collectionName, items) {
+    if (!db || !isRealFirebaseConfigured) return;
     try {
-      const data = localStorage.getItem(STORAGE_PREFIX + name);
-      return data ? JSON.parse(data) : [];
+      const batch = writeBatch(db);
+      const pharmacyId = this.activePharmacyId;
+      items.forEach(item => {
+        const docRef = doc(db, collectionName, String(item.id));
+        batch.set(docRef, {
+          ...item,
+          pharmacyId,
+          createdAt: item.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+      });
+      await batch.commit();
     } catch (e) {
-      console.warn(`Error reading collection ${name}:`, e);
-      return [];
-    }
-  }
-
-  saveCollection(name, items) {
-    try {
-      localStorage.setItem(STORAGE_PREFIX + name, JSON.stringify(items));
-      this.notify();
-    } catch (e) {
-      console.warn(`Error writing collection ${name}:`, e);
-    }
-  }
-
-  async saveToFirestore(collectionName, item) {
-    if (!db || !isRealFirebaseConfigured || !item || !item.id) return;
-    try {
-      const docRef = doc(db, collectionName, String(item.id));
-      const payload = {
-        ...item,
-        pharmacyId: item.pharmacyId || this.activePharmacyId,
-        updatedAt: new Date().toISOString()
-      };
-      await setDoc(docRef, payload, { merge: true });
-    } catch (e) {
-      console.warn(`Firestore setDoc error for ${collectionName}/${item.id}:`, e);
+      console.warn(`Initial Firestore seed notice for ${collectionName}:`, e);
     }
   }
 
@@ -345,26 +242,37 @@ class DatabaseService {
   // DISTRIBUTORS
   // ==========================================
   getDistributors() {
-    return this.getCollection('distributors');
+    return [...this.cache.distributors];
   }
 
   getDistributorById(id) {
-    return this.getDistributors().find(d => d.id === id);
+    return this.cache.distributors.find(d => d.id === id);
   }
 
-  addDistributor(distributor) {
-    const list = this.getDistributors();
+  async addDistributor(distributor) {
+    const id = distributor.id || `dist_${Date.now()}`;
     const newDist = {
       ...distributor,
-      id: distributor.id || `dist_${Date.now()}`,
+      id,
       pharmacyId: this.activePharmacyId,
-      createdAt: distributor.createdAt || new Date().toISOString()
+      createdAt: distributor.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
-    list.unshift(newDist);
-    this.saveCollection('distributors', list);
-    this.saveToFirestore('distributors', newDist);
 
-    this.logAudit("Distributor Added", "distributors", newDist.id, `Added distributor: ${newDist.name}`);
+    // Optimistically update cache
+    this.cache.distributors.unshift(newDist);
+    this.notify();
+
+    if (db && isRealFirebaseConfigured) {
+      try {
+        const docRef = doc(db, 'distributors', id);
+        await setDoc(docRef, newDist);
+      } catch (err) {
+        console.error("Firestore error saving distributor:", err);
+      }
+    }
+
+    this.logAudit("Distributor Added", "distributors", id, `Added distributor: ${newDist.name}`);
     return newDist;
   }
 
@@ -393,42 +301,50 @@ class DatabaseService {
   }
 
   // ==========================================
-  // PURCHASE BILLS & OCR
+  // PURCHASE BILLS & INVOICES
   // ==========================================
   getPurchaseBills() {
-    return this.getCollection('purchaseBills');
+    return [...this.cache.purchaseBills];
   }
 
   getPurchaseBillById(id) {
-    return this.getPurchaseBills().find(b => b.id === id);
+    return this.cache.purchaseBills.find(b => b.id === id);
   }
 
   checkDuplicateBill(distributorId, invoiceNumber) {
     return billService.checkDuplicate(this.getPurchaseBills(), distributorId, invoiceNumber);
   }
 
-  savePurchaseBill(billData) {
-    const bills = this.getPurchaseBills();
+  async savePurchaseBill(billData) {
+    const id = billData.id || `bill_${Date.now()}`;
     const newBill = {
       ...billData,
-      id: billData.id || `bill_${Date.now()}`,
+      id,
       pharmacyId: this.activePharmacyId,
-      createdAt: billData.createdAt || new Date().toISOString()
+      createdAt: billData.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
-    const existingIndex = bills.findIndex(b => b.id === newBill.id);
+    const existingIndex = this.cache.purchaseBills.findIndex(b => b.id === id);
     if (existingIndex >= 0) {
-      bills[existingIndex] = newBill;
+      this.cache.purchaseBills[existingIndex] = newBill;
     } else {
-      bills.unshift(newBill);
+      this.cache.purchaseBills.unshift(newBill);
+    }
+    this.notify();
+
+    if (db && isRealFirebaseConfigured) {
+      try {
+        const docRef = doc(db, 'purchaseBills', id);
+        await setDoc(docRef, newBill, { merge: true });
+      } catch (err) {
+        console.error("Firestore error saving purchase bill:", err);
+      }
     }
 
-    this.saveCollection('purchaseBills', bills);
-    this.saveToFirestore('purchaseBills', newBill);
-
-    // If verified, update inventory batches & check price alerts automatically
+    // If bill is verified, synchronize items to batch-level inventory
     if (newBill.status === 'verified') {
-      this.syncBillItemsToInventory(newBill);
+      await this.syncBillItemsToInventory(newBill);
     }
 
     this.logAudit(
@@ -445,27 +361,36 @@ class DatabaseService {
   // PAYMENTS & RECEIPTS
   // ==========================================
   getPayments() {
-    return this.getCollection('payments');
+    return [...this.cache.payments];
   }
 
-  savePayment(paymentData) {
-    const payments = this.getPayments();
+  async savePayment(paymentData) {
+    const id = paymentData.id || `pay_${Date.now()}`;
     const newPayment = {
       ...paymentData,
-      id: paymentData.id || `pay_${Date.now()}`,
+      id,
       pharmacyId: this.activePharmacyId,
       status: paymentData.status || 'verified',
-      createdAt: paymentData.createdAt || new Date().toISOString()
+      createdAt: paymentData.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
 
-    payments.unshift(newPayment);
-    this.saveCollection('payments', payments);
-    this.saveToFirestore('payments', newPayment);
+    this.cache.payments.unshift(newPayment);
+    this.notify();
+
+    if (db && isRealFirebaseConfigured) {
+      try {
+        const docRef = doc(db, 'payments', id);
+        await setDoc(docRef, newPayment);
+      } catch (err) {
+        console.error("Firestore error saving payment:", err);
+      }
+    }
 
     this.logAudit(
       "Payment Recorded",
       "payments",
-      newPayment.id,
+      id,
       `₹${Number(newPayment.amount).toFixed(2)} to ${newPayment.distributorName} via ${newPayment.paymentMethod.toUpperCase()}`
     );
 
@@ -475,11 +400,15 @@ class DatabaseService {
   // ==========================================
   // INVENTORY & BATCH TRACKING
   // ==========================================
-  syncBillItemsToInventory(bill) {
-    const products = this.getCollection('products');
-    let batches = this.getCollection('batches') || [];
+  getBatches() {
+    return [...this.cache.batches];
+  }
 
-    (bill.items || []).forEach(item => {
+  async syncBillItemsToInventory(bill) {
+    const products = [...this.cache.products];
+    const batches = [...this.cache.batches];
+
+    for (const item of (bill.items || [])) {
       // Find or create product
       let product = products.find(p => p.name.toLowerCase() === item.productName.toLowerCase());
       if (!product) {
@@ -490,13 +419,16 @@ class DatabaseService {
           genericSalt: item.genericSalt || "Essential Medicine Salt",
           category: "Prescription",
           gstRate: item.gstRate || 12,
-          defaultPackSize: item.packSize || "10 Units"
+          defaultPackSize: item.packSize || "10 Units",
+          createdAt: new Date().toISOString()
         };
         products.push(product);
-        this.saveToFirestore('products', product);
+        if (db && isRealFirebaseConfigured) {
+          setDoc(doc(db, 'products', product.id), product).catch(console.warn);
+        }
       }
 
-      // Check for price anomaly
+      // Check for price anomaly against purchase rate history
       const priceAlert = priceAlertService.detectPriceDifference(item, batches);
       if (priceAlert) {
         this.addPriceAlert({
@@ -517,7 +449,11 @@ class DatabaseService {
         existingBatch.distributorId = bill.distributorId;
         existingBatch.distributorName = bill.distributorName;
         existingBatch.expiryDate = item.expiryDate;
-        this.saveToFirestore('batches', existingBatch);
+        existingBatch.updatedAt = new Date().toISOString();
+
+        if (db && isRealFirebaseConfigured) {
+          setDoc(doc(db, 'batches', batchId), existingBatch, { merge: true }).catch(console.warn);
+        }
       } else {
         const newBatch = {
           id: batchId,
@@ -527,64 +463,39 @@ class DatabaseService {
           genericSalt: product.genericSalt,
           batchNumber: item.batchNumber,
           expiryDate: item.expiryDate,
-          packSize: item.packSize,
+          packSize: item.packSize || "10 Tabs",
           quantityInUnits: Number(item.quantity) * 10,
           purchaseRate: Number(item.purchaseRate),
           mrp: Number(item.purchaseRate) * 1.25,
           distributorId: bill.distributorId,
           distributorName: bill.distributorName,
           billId: bill.id,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         };
         batches.unshift(newBatch);
-        this.saveToFirestore('batches', newBatch);
+        if (db && isRealFirebaseConfigured) {
+          setDoc(doc(db, 'batches', batchId), newBatch).catch(console.warn);
+        }
       }
-    });
-
-    this.saveCollection('products', products);
-    this.saveCollection('batches', batches);
-  }
-
-  getBatches() {
-    let batches = this.getCollection('batches');
-    if (!batches || batches.length === 0) {
-      const bills = this.getPurchaseBills().filter(b => b.status === 'verified');
-      batches = [];
-      bills.forEach(bill => {
-        (bill.items || []).forEach(item => {
-          batches.push({
-            id: `batch_${item.batchNumber}`,
-            pharmacyId: this.activePharmacyId,
-            productName: item.productName,
-            genericSalt: item.genericSalt || "Active Pharmaceutical Ingredient",
-            batchNumber: item.batchNumber,
-            expiryDate: item.expiryDate,
-            packSize: item.packSize || "10 Tabs",
-            quantityInUnits: (item.quantity || 10) * 10,
-            purchaseRate: item.purchaseRate,
-            mrp: (item.purchaseRate * 1.25).toFixed(2),
-            distributorId: bill.distributorId,
-            distributorName: bill.distributorName,
-            billId: bill.id
-          });
-        });
-      });
-      this.saveCollection('batches', batches);
     }
-    return batches;
+
+    this.cache.products = products;
+    this.cache.batches = batches;
+    this.notify();
   }
 
-  adjustInventory(batchId, quantityChange, reason, notes = '') {
-    const batches = this.getBatches();
-    const batch = batches.find(b => b.id === batchId);
+  async adjustInventory(batchId, quantityChange, reason, notes = '') {
+    const batch = this.cache.batches.find(b => b.id === batchId);
     if (!batch) return false;
 
     const oldQty = batch.quantityInUnits;
     batch.quantityInUnits = Math.max(0, batch.quantityInUnits + Number(quantityChange));
+    batch.updatedAt = new Date().toISOString();
 
-    const adjustments = this.getCollection('adjustments');
+    const adjId = `adj_${Date.now()}`;
     const adjRecord = {
-      id: `adj_${Date.now()}`,
+      id: adjId,
       pharmacyId: this.activePharmacyId,
       batchId,
       productName: batch.productName,
@@ -599,12 +510,17 @@ class DatabaseService {
       createdAt: new Date().toISOString()
     };
 
-    adjustments.unshift(adjRecord);
-    this.saveCollection('batches', batches);
-    this.saveCollection('adjustments', adjustments);
+    this.cache.adjustments.unshift(adjRecord);
+    this.notify();
 
-    this.saveToFirestore('batches', batch);
-    this.saveToFirestore('adjustments', adjRecord);
+    if (db && isRealFirebaseConfigured) {
+      try {
+        await setDoc(doc(db, 'batches', batchId), batch, { merge: true });
+        await setDoc(doc(db, 'adjustments', adjId), adjRecord);
+      } catch (err) {
+        console.error("Firestore error updating inventory adjustment:", err);
+      }
+    }
 
     this.logAudit(
       "Inventory Adjusted",
@@ -624,41 +540,127 @@ class DatabaseService {
   // PRICE ALERTS & ANOMALIES
   // ==========================================
   getPriceAlerts() {
-    return this.getCollection('priceAlerts');
+    return [...this.cache.priceAlerts];
   }
 
   getPriceAnomalies() {
     return this.getPriceAlerts();
   }
 
-  addPriceAlert(alertData) {
-    const alerts = this.getPriceAlerts();
+  async addPriceAlert(alertData) {
+    const id = alertData.id || `alert_${Date.now()}`;
     const newAlert = {
       ...alertData,
-      id: alertData.id || `alert_${Date.now()}`,
+      id,
       pharmacyId: this.activePharmacyId,
       createdAt: new Date().toISOString()
     };
-    alerts.unshift(newAlert);
-    this.saveCollection('priceAlerts', alerts);
-    this.saveToFirestore('priceAlerts', newAlert);
+
+    this.cache.priceAlerts.unshift(newAlert);
+    this.notify();
+
+    if (db && isRealFirebaseConfigured) {
+      try {
+        await setDoc(doc(db, 'priceAlerts', id), newAlert);
+      } catch (err) {
+        console.warn("Error saving price alert:", err);
+      }
+    }
+
     return newAlert;
   }
 
   // ==========================================
-  // NOTIFICATIONS
+  // NOTIFICATIONS (Real-Time In-App Bell)
   // ==========================================
   getNotifications() {
-    return this.getCollection('notifications');
+    const notifs = [...this.cache.notifications];
+    
+    // Supplement with any expiring batches <= 90 days that may not yet be persisted by scheduled job
+    const expiringBatches = this.getExpiringBatches(90);
+    expiringBatches.forEach(b => {
+      const existing = notifs.find(n => n.batchId === b.id || n.id === `notif_exp_${b.id}`);
+      if (!existing) {
+        const today = new Date();
+        const exp = new Date(b.expiryDate);
+        const diffDays = Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
+        let threshold = '90_days';
+        let severity = 'info';
+        if (diffDays <= 0) {
+          threshold = 'expired';
+          severity = 'error';
+        } else if (diffDays <= 7) {
+          threshold = '7_days';
+          severity = 'error';
+        } else if (diffDays <= 30) {
+          threshold = '30_days';
+          severity = 'warning';
+        }
+        notifs.push({
+          id: `notif_exp_${b.id}`,
+          pharmacyId: this.activePharmacyId,
+          batchId: b.id,
+          productName: b.productName,
+          batchNumber: b.batchNumber,
+          expiryDate: b.expiryDate,
+          daysLeft: diffDays,
+          threshold,
+          severity,
+          title: diffDays <= 0 ? `BATCH EXPIRED: ${b.productName}` : `Expiry Reminder (${diffDays}d left): ${b.productName}`,
+          message: `Batch #${b.batchNumber} (${b.quantityInUnits || 0} units left) expires on ${b.expiryDate}.`,
+          isRead: false,
+          createdAt: new Date().toISOString()
+        });
+      }
+    });
+
+    return notifs.sort((a, b) => {
+      if (a.isRead !== b.isRead) return a.isRead ? 1 : -1;
+      return (a.daysLeft ?? 999) - (b.daysLeft ?? 999);
+    });
   }
 
-  markNotificationAsRead(notificationId) {
-    const notifications = this.getNotifications();
-    const notif = notifications.find(n => n.id === notificationId);
+  async markNotificationAsRead(notificationId) {
+    const notif = this.cache.notifications.find(n => n.id === notificationId);
     if (notif) {
       notif.isRead = true;
-      this.saveCollection('notifications', notifications);
-      this.saveToFirestore('notifications', notif);
+      this.notify();
+
+      if (db && isRealFirebaseConfigured) {
+        try {
+          await updateDoc(doc(db, 'notifications', notificationId), {
+            isRead: true,
+            updatedAt: new Date().toISOString()
+          });
+        } catch (e) {
+          console.warn("Failed to mark notification as read:", e);
+        }
+      }
+    }
+  }
+
+  async markAllNotificationsAsRead() {
+    const unread = this.getNotifications().filter(n => !n.isRead);
+    unread.forEach(n => {
+      n.isRead = true;
+      const inCache = this.cache.notifications.find(c => c.id === n.id);
+      if (inCache) inCache.isRead = true;
+    });
+    this.notify();
+
+    if (db && isRealFirebaseConfigured && this.cache.notifications.some(n => !n.isRead)) {
+      try {
+        const batch = writeBatch(db);
+        this.cache.notifications.filter(n => !n.isRead).forEach(n => {
+          batch.update(doc(db, 'notifications', n.id), {
+            isRead: true,
+            updatedAt: new Date().toISOString()
+          });
+        });
+        await batch.commit();
+      } catch (e) {
+        console.warn("Failed to mark all notifications as read in Firestore:", e);
+      }
     }
   }
 
@@ -668,7 +670,7 @@ class DatabaseService {
   getReviewCenterItems() {
     const items = [];
 
-    // 1. Bills Needing Verification
+    // 1. Unverified Invoices
     this.getPurchaseBills()
       .filter(b => b.status === 'needs_verification')
       .forEach(b => {
@@ -719,14 +721,13 @@ class DatabaseService {
   }
 
   // ==========================================
-  // AUDIT LOGS
+  // REGULATORY AUDIT LOGS
   // ==========================================
   getAuditLogs() {
-    return this.getCollection('auditLogs');
+    return [...this.cache.auditLogs];
   }
 
-  logAudit(action, entity, entityId, details) {
-    const logs = this.getAuditLogs();
+  async logAudit(action, entity, entityId, details) {
     const user = authService.user;
     const newLog = auditService.createAuditRecord({
       pharmacyId: this.activePharmacyId,
@@ -738,9 +739,17 @@ class DatabaseService {
       details
     });
 
-    logs.unshift(newLog);
-    this.saveCollection('auditLogs', logs);
-    this.saveToFirestore('auditLogs', newLog);
+    this.cache.auditLogs.unshift(newLog);
+    this.notify();
+
+    if (db && isRealFirebaseConfigured) {
+      try {
+        await setDoc(doc(db, 'auditLogs', newLog.id), newLog);
+      } catch (err) {
+        console.warn("Failed to write audit log to Firestore:", err);
+      }
+    }
+
     return newLog;
   }
 }

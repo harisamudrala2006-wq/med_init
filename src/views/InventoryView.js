@@ -5,7 +5,15 @@ import { i18n } from '../context/i18nState.js';
 let searchQuery = '';
 let filterExpiry = 'all';
 
-export function renderInventoryView() {
+export function setInventoryFilter(query = '', expiry = 'all') {
+  searchQuery = query;
+  filterExpiry = expiry;
+}
+
+export function renderInventoryView(params = {}) {
+  if (params && params.search !== undefined) {
+    searchQuery = params.search;
+  }
   const batches = dbService.getBatches();
   const now = new Date();
 

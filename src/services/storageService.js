@@ -13,7 +13,7 @@ export const storageService = {
     const safePharmacyId = pharmacyId || "default_pharmacy";
     const safeBillId = billId || `bill_${Date.now()}`;
     const extension = file.name ? file.name.split('.').pop() : 'jpg';
-    const filePath = `pharmacies/${safePharmacyId}/bills/${safeBillId}_${Date.now()}.${extension}`;
+    const filePath = `bills/${safePharmacyId}/${safeBillId}.${extension}`;
 
     if (storage && isRealFirebaseConfigured) {
       try {

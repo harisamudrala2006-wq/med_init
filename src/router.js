@@ -73,6 +73,15 @@ class Router {
       return;
     }
 
+    // Role-based Guard: Staff cannot access regulatory audit logs
+    if (authService.isAuthenticated && path === 'audit' && authService.user?.role === 'staff') {
+      alert("Access Restricted: Regulatory Audit Logs can only be viewed by Pharmacy Owners & Administrators.");
+      this.currentRoute = 'dashboard';
+      if (push) window.history.pushState(null, '', '#dashboard');
+      this.renderCurrentView();
+      return;
+    }
+
     // If authenticated and trying to go to login, send to dashboard
     if (authService.isAuthenticated && path === 'login') {
       this.currentRoute = 'dashboard';
@@ -115,7 +124,7 @@ class Router {
         break;
       case 'inventory':
       case 'expiry':
-        viewHtml = renderInventoryView();
+        viewHtml = renderInventoryView(this.params);
         break;
       case 'payments':
         viewHtml = renderPaymentsView();

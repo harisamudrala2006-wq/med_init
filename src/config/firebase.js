@@ -33,6 +33,7 @@ import {
   uploadBytes, 
   getDownloadURL 
 } from 'firebase/storage';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
 
@@ -52,13 +53,18 @@ export const isRealFirebaseConfigured = Boolean(
   firebaseConfig.apiKey !== "AIzaSyDummyKeyForDevelopment"
 );
 
-let app, auth, db, storage;
+let app, auth, db, storage, functions;
 
 try {
   app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
   storage = getStorage(app);
+  try {
+    functions = getFunctions(app, 'asia-south1');
+  } catch (fnErr) {
+    functions = getFunctions(app);
+  }
 
   // Set persistence
   if (typeof window !== 'undefined') {
@@ -68,4 +74,4 @@ try {
   console.warn("Firebase SDK initialization in client mode:", error.message);
 }
 
-export { app, auth, db, storage };
+export { app, auth, db, storage, functions, httpsCallable };

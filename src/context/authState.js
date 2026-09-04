@@ -1,181 +1,49 @@
-// Authentication State (Phase 3)
-// Real Firebase Auth integration with fallback session support.
-import { auth, isRealFirebaseConfigured } from '../config/firebase.js';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
-  signOut as fbSignOut, 
-  onAuthStateChanged,
-  sendPasswordResetEmail
-} from 'firebase/auth';
-
-const SESSION_KEY = 'medi_auth_session';
-
-let currentUser = null;
-let isAuthLoading = true;
-const listeners = new Set();
-
-// Check for local persisted session
-try {
-  const savedSession = localStorage.getItem(SESSION_KEY);
-  if (savedSession) {
-    currentUser = JSON.parse(savedSession);
-  }
-} catch (e) {
-  console.warn("Could not read auth session:", e);
-}
-
-// Wire Firebase Auth state if real Firebase is available
-if (auth && isRealFirebaseConfigured) {
-  onAuthStateChanged(auth, (fbUser) => {
-    if (fbUser) {
-      currentUser = {
-        uid: fbUser.uid,
-        email: fbUser.email,
-        displayName: fbUser.displayName || "Licensed Pharmacist",
-        role: "owner"
-      };
-      localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
-    } else {
-      currentUser = null;
-      localStorage.removeItem(SESSION_KEY);
-    }
-    isAuthLoading = false;
-    listeners.forEach(fn => fn(currentUser));
-  });
-} else {
-  // If in demo/offline mode, keep persistent session or default
-  isAuthLoading = false;
-}
+// Real Firebase Authentication State Adapter
+// Fully backed by authService.js (Zero fake local logins)
+import { authService } from '../services/authService.js';
 
 export const authState = {
   get user() {
-    return currentUser;
+    return authService.user;
   },
 
   get isAuthenticated() {
-    return Boolean(currentUser);
+    return authService.isAuthenticated;
   },
 
   get isLoading() {
-    return isAuthLoading;
+    return authService.isLoading;
+  },
+
+  get isOwner() {
+    return authService.isOwner;
+  },
+
+  get isStaff() {
+    return authService.isStaff;
   },
 
   async login(identifier, password) {
-    isAuthLoading = true;
-    listeners.forEach(fn => fn(currentUser));
+    return await authService.loginWithEmail(identifier, password);
+  },
 
-    const cleanId = identifier.trim().replace(/\s+/g, '');
-    const cleanPwd = password.trim();
-    const email = identifier.includes('@') ? identifier.trim() : `${cleanId}@sribalaji.in`;
+  async sendOtp(phoneNumber, containerId) {
+    return await authService.sendOtp(phoneNumber, containerId);
+  },
 
-    // Handle Firebase Auth
-    if (auth && isRealFirebaseConfigured) {
-      try {
-        let userCredential;
-        try {
-          userCredential = await signInWithEmailAndPassword(auth, email, cleanPwd);
-        } catch (signInErr) {
-          // If user doesn't exist yet in the newly created Firebase project, auto-register
-          if (
-            signInErr.code === 'auth/user-not-found' || 
-            signInErr.code === 'auth/invalid-credential' ||
-            signInErr.message?.includes('user-not-found') ||
-            signInErr.message?.includes('invalid-credential')
-          ) {
-            try {
-              userCredential = await createUserWithEmailAndPassword(auth, email, cleanPwd);
-            } catch (createErr) {
-              throw signInErr;
-            }
-          } else {
-            throw signInErr;
-          }
-        }
-
-        currentUser = {
-          uid: userCredential.user.uid,
-          email: userCredential.user.email,
-          displayName: userCredential.user.displayName || "Dr. K. Rama Rao",
-          role: "owner"
-        };
-        localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
-        isAuthLoading = false;
-        listeners.forEach(fn => fn(currentUser));
-        return { success: true };
-      } catch (error) {
-        console.warn("Firebase Auth attempt notice:", error.message);
-        // If Firebase Auth fails, fallback to local clinical session so user is never locked out
-        if (cleanId && cleanPwd.length >= 6) {
-          currentUser = {
-            uid: "usr_staff_01",
-            email: email,
-            mobile: cleanId.includes('@') ? "9849012345" : cleanId,
-            displayName: "Dr. K. Rama Rao",
-            role: "owner"
-          };
-          localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
-          isAuthLoading = false;
-          listeners.forEach(fn => fn(currentUser));
-          return { success: true };
-        }
-        isAuthLoading = false;
-        listeners.forEach(fn => fn(currentUser));
-        return { success: false, error: error.message };
-      }
-    } else {
-      // Offline/Local validation mode matching Stitch credentials
-      await new Promise(resolve => setTimeout(resolve, 600)); // Simulate auth network latency
-      
-      const cleanId = identifier.trim().replace(/\s+/g, '');
-      const cleanPwd = password.trim();
-
-      // Accept sample staff logins: 9849012345 or staff@sribalaji.in with min 6-8 chars
-      if (cleanId && cleanPwd.length >= 6) {
-        currentUser = {
-          uid: "usr_staff_01",
-          email: cleanId.includes('@') ? cleanId : `${cleanId}@sribalaji.in`,
-          mobile: cleanId.includes('@') ? "9849012345" : cleanId,
-          displayName: "Dr. K. Rama Rao",
-          role: "owner"
-        };
-        localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
-        isAuthLoading = false;
-        listeners.forEach(fn => fn(currentUser));
-        return { success: true };
-      } else {
-        isAuthLoading = false;
-        listeners.forEach(fn => fn(currentUser));
-        return { 
-          success: false, 
-          error: "Invalid staff credentials. Password must be at least 6 characters." 
-        };
-      }
-    }
+  async verifyOtp(code, options) {
+    return await authService.verifyOtp(code, options);
   },
 
   async logout() {
-    if (auth && isRealFirebaseConfigured) {
-      try {
-        await fbSignOut(auth);
-      } catch (e) {
-        console.warn("Sign out error:", e);
-      }
-    }
-    currentUser = null;
-    localStorage.removeItem(SESSION_KEY);
-    listeners.forEach(fn => fn(currentUser));
+    return await authService.logout();
   },
 
   async forgotPassword(email) {
-    if (auth && isRealFirebaseConfigured && email) {
-      await sendPasswordResetEmail(auth, email);
-    }
-    return true;
+    return await authService.sendPasswordReset(email);
   },
 
   subscribe(fn) {
-    listeners.add(fn);
-    return () => listeners.delete(fn);
+    return authService.subscribe(fn);
   }
 };

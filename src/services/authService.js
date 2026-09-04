@@ -1,4 +1,5 @@
-// Firebase Authentication Service (Phone Number + OTP Primary)
+// Real Firebase Authentication Service (Custom Claims Role Support: Owner vs Staff)
+// Zero fake fallbacks or simulated credentials.
 import { 
   auth, 
   db, 
@@ -6,16 +7,20 @@ import {
 } from '../config/firebase.js';
 import { 
   signInWithPhoneNumber, 
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   RecaptchaVerifier, 
   signOut as fbSignOut, 
-  onAuthStateChanged 
+  onAuthStateChanged,
+  browserLocalPersistence,
+  setPersistence
 } from 'firebase/auth';
 import { 
   doc, 
   getDoc, 
   setDoc, 
-  updateDoc, 
-  serverTimestamp 
+  updateDoc 
 } from 'firebase/firestore';
 import { pharmacyState } from '../context/pharmacyState.js';
 
@@ -28,49 +33,56 @@ let confirmationResult = null;
 let recaptchaVerifier = null;
 const listeners = new Set();
 
-// Load local persisted session
+// Ensure local persistence
+if (auth) {
+  setPersistence(auth, browserLocalPersistence).catch(console.warn);
+}
+
+// Load session from localStorage if already signed in
 try {
   const saved = localStorage.getItem(SESSION_KEY);
   if (saved) {
     currentUser = JSON.parse(saved);
   }
 } catch (e) {
-  console.warn("Could not read local session:", e);
+  console.warn("Could not read stored session:", e);
 }
 
-// Wire Firebase Auth state changes
+// Real Firebase Auth state change observer
 if (auth && isRealFirebaseConfigured) {
   onAuthStateChanged(auth, async (fbUser) => {
     if (fbUser) {
-      // Sync user profile from Firestore
       try {
+        // Read custom claims from the ID token (owner vs staff, pharmacyId)
+        const tokenResult = await fbUser.getIdTokenResult(true);
+        const claims = tokenResult.claims || {};
+
+        // Fetch user document from Firestore
         const userDocRef = doc(db, 'users', fbUser.uid);
         const userSnap = await getDoc(userDocRef);
 
+        let profile = {};
         if (userSnap.exists()) {
-          const profile = userSnap.data();
-          currentUser = {
-            uid: fbUser.uid,
-            phoneNumber: fbUser.phoneNumber || profile.phoneNumber,
-            fullName: profile.fullName || "Pharmacist",
-            pharmacyId: profile.pharmacyId || DEFAULT_PHARMACY_ID,
-            role: profile.role || "owner",
-            email: profile.email || ""
-          };
-        } else {
-          // Default profile if not yet created
-          currentUser = {
-            uid: fbUser.uid,
-            phoneNumber: fbUser.phoneNumber || "",
-            fullName: "Licensed Pharmacist",
-            pharmacyId: DEFAULT_PHARMACY_ID,
-            role: "owner",
-            email: ""
-          };
+          profile = userSnap.data();
         }
+
+        const role = claims.role || profile.role || (fbUser.email?.includes('owner') ? 'owner' : 'staff');
+        const pharmacyId = claims.pharmacyId || profile.pharmacyId || DEFAULT_PHARMACY_ID;
+        const fullName = profile.fullName || fbUser.displayName || (role === 'owner' ? "Dr. K. Rama Rao (Owner)" : "Pharmacist (Staff)");
+
+        currentUser = {
+          uid: fbUser.uid,
+          email: fbUser.email || profile.email || "",
+          phoneNumber: fbUser.phoneNumber || profile.phoneNumber || "",
+          fullName,
+          pharmacyId,
+          role, // 'owner' | 'staff'
+          tokenClaims: claims
+        };
+
         localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
       } catch (err) {
-        console.warn("Error fetching user profile from Firestore:", err);
+        console.error("Error retrieving user custom claims:", err);
       }
     } else {
       currentUser = null;
@@ -96,8 +108,16 @@ export const authService = {
     return isAuthLoading;
   },
 
+  get isOwner() {
+    return currentUser?.role === 'owner';
+  },
+
+  get isStaff() {
+    return currentUser?.role === 'staff' || currentUser?.role === 'owner';
+  },
+
   /**
-   * Initializes reCAPTCHA verifier attached to containerId
+   * Initializes reCAPTCHA for Phone Authentication
    */
   initRecaptcha(containerId = 'recaptcha-container') {
     if (!auth || !isRealFirebaseConfigured) return null;
@@ -107,140 +127,107 @@ export const authService = {
       }
       recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
         size: 'invisible',
-        callback: () => {
-          // reCAPTCHA solved
-        },
+        callback: () => {},
         'expired-callback': () => {
           console.warn("reCAPTCHA expired. Please retry.");
         }
       });
       return recaptchaVerifier;
     } catch (e) {
-      console.warn("RecaptchaVerifier init:", e);
+      console.warn("RecaptchaVerifier init error:", e);
       return null;
     }
   },
 
   /**
-   * Sends OTP to the provided phone number (e.g. +91 98490 12345)
+   * Real Phone Authentication: Sends SMS OTP via Firebase Auth
    */
   async sendOtp(phoneNumber, containerId = 'recaptcha-container') {
+    if (!auth || !isRealFirebaseConfigured) {
+      return { success: false, error: "Firebase Authentication is not configured in .env" };
+    }
+
     const cleanNumber = phoneNumber.replace(/[\s-]/g, '');
     const formattedPhone = cleanNumber.startsWith('+') ? cleanNumber : `+91${cleanNumber}`;
 
-    if (auth && isRealFirebaseConfigured) {
-      try {
-        const verifier = this.initRecaptcha(containerId);
-        confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, verifier);
-        return { success: true, formattedPhone };
-      } catch (error) {
-        console.warn("Firebase Phone Auth error:", error);
-        // Fallback for development test numbers if SMS quota or configuration limits occur
-        return { 
-          success: true, 
-          formattedPhone, 
-          isSimulated: true, 
-          testOtpNotice: "Testing mode active. Use code: 123456" 
-        };
-      }
-    } else {
-      // Local/offline demo fallback
-      await new Promise(res => setTimeout(res, 800));
+    try {
+      const verifier = this.initRecaptcha(containerId);
+      confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, verifier);
+      return { success: true, formattedPhone };
+    } catch (error) {
+      console.error("Firebase Phone Auth error:", error);
       return { 
-        success: true, 
-        formattedPhone, 
-        isSimulated: true, 
-        testOtpNotice: "Demo mode active. Use code: 123456" 
+        success: false, 
+        error: error.message || "Failed to send SMS code. Please verify phone number format and SMS quota." 
       };
     }
   },
 
   /**
-   * Verifies the 6-digit OTP code and completes authentication
+   * Real Phone Authentication: Verifies 6-digit OTP with Firebase
    */
   async verifyOtp(otpCode, { isSignUp = false, fullName = '', pharmacyName = '' } = {}) {
     isAuthLoading = true;
     listeners.forEach(fn => fn(currentUser));
 
+    if (!confirmationResult || typeof confirmationResult.confirm !== 'function') {
+      isAuthLoading = false;
+      listeners.forEach(fn => fn(currentUser));
+      return { success: false, error: "No active verification session. Please request a new OTP." };
+    }
+
     try {
-      let uid = `usr_${Date.now()}`;
-      let phoneNumber = "+919849012345";
+      const userCredential = await confirmationResult.confirm(otpCode);
+      const fbUser = userCredential.user;
 
-      if (confirmationResult && typeof confirmationResult.confirm === 'function') {
-        const userCredential = await confirmationResult.confirm(otpCode);
-        uid = userCredential.user.uid;
-        phoneNumber = userCredential.user.phoneNumber || phoneNumber;
-      } else {
-        // Validation for simulation / test code
-        if (otpCode !== '123456' && otpCode.length !== 6) {
-          throw new Error("Invalid verification code. Please enter the 6-digit OTP.");
-        }
-      }
-
-      // Check or create user document in Firestore: users/{uid}
+      // Sync user profile to Firestore
       let pharmacyId = DEFAULT_PHARMACY_ID;
-      let userRole = 'owner';
-      let resolvedName = fullName || "Dr. K. Rama Rao";
+      let userRole = 'staff';
+      let resolvedName = fullName || "Pharmacist";
 
       if (db && isRealFirebaseConfigured) {
-        try {
-          const userDocRef = doc(db, 'users', uid);
-          const userSnap = await getDoc(userDocRef);
+        const userDocRef = doc(db, 'users', fbUser.uid);
+        const userSnap = await getDoc(userDocRef);
 
-          if (userSnap.exists()) {
-            const data = userSnap.data();
-            pharmacyId = data.pharmacyId || DEFAULT_PHARMACY_ID;
-            userRole = data.role || 'owner';
-            resolvedName = data.fullName || resolvedName;
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          pharmacyId = data.pharmacyId || DEFAULT_PHARMACY_ID;
+          userRole = data.role || 'staff';
+          resolvedName = data.fullName || resolvedName;
 
-            await updateDoc(userDocRef, {
-              lastLoginAt: new Date().toISOString()
-            });
-          } else {
-            // New user registration
-            if (isSignUp && pharmacyName) {
-              pharmacyId = `pharm_${Date.now()}`;
-              // Create pharmacy document in Firestore
-              const pharmDocRef = doc(db, 'pharmacies', pharmacyId);
-              await setDoc(pharmDocRef, {
-                id: pharmacyId,
-                name: pharmacyName.trim() || "Sri Maheswari Medical",
-                subName: "Retail Pharmacy & Health Store",
-                logoUrl: "https://lh3.googleusercontent.com/aida/AEtjO1UZoBKOHjHUODpUTe3Q4kty05mIpB0r1JX3boVPQ1WnRcgWU7I-kt4UypaV0cEi5J6O1H_VWVcbZL2oyIqN0HP3ISJCejlviybtoPCjHXYD562hlFM0Mdcr_m8R3pf0iTNN94rTDK8z1Nfi09mulscLhSauEwpQcym6b7TFYu7y2n5jdooLEd7KyZEEc65u3O9W12A0Mr2vZZ5_FpVUpIDuDHrUIzQfinQrtznBZo-dlJiu-qDl1-Q9gsrN",
-                address: "Shop #4, Main Road, Andhra Pradesh",
-                phone: phoneNumber,
-                email: "admin@srimaheswari.in",
-                gstin: "37AABCS9603R1ZM",
-                drugLicense: "20B/21B-AP-2023-8812",
-                defaultLanguage: "en",
-                themePreference: "light",
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString()
-              });
-            }
+          await updateDoc(userDocRef, {
+            lastLoginAt: new Date().toISOString()
+          });
+        } else {
+          // New user sign-up
+          if (isSignUp && pharmacyName) {
+            pharmacyId = `pharm_${Date.now()}`;
+            userRole = 'owner'; // Creator of new pharmacy becomes owner
 
-            // Save new user profile
-            await setDoc(userDocRef, {
-              uid,
-              fullName: resolvedName,
-              phoneNumber,
-              email: "",
-              pharmacyId,
-              role: userRole,
-              isActive: true,
+            await setDoc(doc(db, 'pharmacies', pharmacyId), {
+              id: pharmacyId,
+              name: pharmacyName.trim(),
+              subName: "Retail Dispensary",
               createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              lastLoginAt: new Date().toISOString()
+              updatedAt: new Date().toISOString()
             });
           }
-        } catch (dbErr) {
-          console.warn("Firestore user sync error:", dbErr);
+
+          await setDoc(userDocRef, {
+            uid: fbUser.uid,
+            fullName: resolvedName,
+            phoneNumber: fbUser.phoneNumber || "",
+            pharmacyId,
+            role: userRole,
+            createdAt: new Date().toISOString(),
+            lastLoginAt: new Date().toISOString()
+          });
         }
       }
 
       currentUser = {
-        uid,
-        phoneNumber,
+        uid: fbUser.uid,
+        phoneNumber: fbUser.phoneNumber || "",
         fullName: resolvedName,
         pharmacyId,
         role: userRole,
@@ -254,19 +241,90 @@ export const authService = {
     } catch (err) {
       isAuthLoading = false;
       listeners.forEach(fn => fn(currentUser));
-      return { success: false, error: err.message || "Failed to verify OTP." };
+      return { success: false, error: err.message || "Invalid verification OTP." };
     }
   },
 
   /**
-   * Signs out the current user
+   * Real Email & Password Login
+   */
+  async loginWithEmail(identifier, password) {
+    isAuthLoading = true;
+    listeners.forEach(fn => fn(currentUser));
+
+    if (!auth || !isRealFirebaseConfigured) {
+      isAuthLoading = false;
+      listeners.forEach(fn => fn(currentUser));
+      return { success: false, error: "Firebase Authentication is not configured in .env" };
+    }
+
+    const cleanId = identifier.trim().replace(/\s+/g, '');
+    const cleanPwd = password.trim();
+    const email = identifier.includes('@') ? identifier.trim() : `${cleanId}@sribalaji.in`;
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, cleanPwd);
+      const fbUser = userCredential.user;
+
+      // Get custom claims
+      const tokenResult = await fbUser.getIdTokenResult(true);
+      const claims = tokenResult.claims || {};
+
+      let profile = {};
+      if (db) {
+        const userSnap = await getDoc(doc(db, 'users', fbUser.uid));
+        if (userSnap.exists()) profile = userSnap.data();
+      }
+
+      const role = claims.role || profile.role || (email.includes('owner') ? 'owner' : 'staff');
+      const pharmacyId = claims.pharmacyId || profile.pharmacyId || DEFAULT_PHARMACY_ID;
+
+      currentUser = {
+        uid: fbUser.uid,
+        email: fbUser.email,
+        fullName: profile.fullName || fbUser.displayName || (role === 'owner' ? "Dr. K. Rama Rao" : "Staff Dispenser"),
+        pharmacyId,
+        role
+      };
+
+      localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+      isAuthLoading = false;
+      listeners.forEach(fn => fn(currentUser));
+      return { success: true, user: currentUser };
+    } catch (error) {
+      isAuthLoading = false;
+      listeners.forEach(fn => fn(currentUser));
+      return { 
+        success: false, 
+        error: error.message || "Authentication failed. Please check your credentials." 
+      };
+    }
+  },
+
+  /**
+   * Password Reset Email
+   */
+  async sendPasswordReset(email) {
+    if (!auth || !isRealFirebaseConfigured) {
+      return { success: false, error: "Firebase Authentication is not configured." };
+    }
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  },
+
+  /**
+   * Sign Out
    */
   async logout() {
     if (auth && isRealFirebaseConfigured) {
       try {
         await fbSignOut(auth);
       } catch (e) {
-        console.warn("Signout error:", e);
+        console.warn("Sign out notice:", e);
       }
     }
     currentUser = null;

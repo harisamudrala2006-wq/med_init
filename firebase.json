@@ -5,6 +5,21 @@
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
   },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ]
+    }
+  ],
   "hosting": {
     "public": "dist",
     "ignore": [
@@ -21,8 +36,9 @@
   },
   "auth": {
     "providers": {
-      "anonymous": true,
-      "emailPassword": true
+      "anonymous": false,
+      "emailPassword": true,
+      "phone": true
     }
   }
 }
