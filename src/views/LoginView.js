@@ -1,5 +1,5 @@
 // Login & Sign Up View (Preserves Stitch Styling Exactly)
-// Real Firebase Authentication: Phone Number + OTP with RecaptchaVerifier
+// Real Firebase Authentication: Phone OTP and Email/Password with real session persistence
 import { pharmacyState } from '../context/pharmacyState.js';
 import { authService } from '../services/authService.js';
 import { pharmacyService } from '../services/pharmacyService.js';
@@ -7,17 +7,17 @@ import { dbService } from '../services/dbService.js';
 import { i18n } from '../context/i18nState.js';
 
 let activeAuthMode = 'signin'; // 'signin' | 'signup'
+let authMethod = 'phone'; // 'phone' | 'email'
 let otpSent = false;
 let enteredPhone = '+91 98490 12345';
 let timerSeconds = 30;
-let timerInterval = null;
 
 export function renderLoginView() {
   const profile = pharmacyState.profile;
 
   return `
     <main class="flex flex-col relative w-full bg-surface dark:bg-background min-h-screen pt-safe pb-safe items-center justify-center p-gutter-normal">
-      <div class="w-full max-w-[420px] flex flex-col gap-space-lg">
+      <div class="w-full max-w-[440px] flex flex-col gap-space-lg">
         <!-- Top Utility: Language Switcher & Clinical Auth Pill -->
         <div class="flex items-center justify-between px-space-xs">
           <div class="flex items-center gap-1.5 bg-surface-container-low dark:bg-surface-container-high px-2.5 py-1 rounded-full text-secondary dark:text-secondary-fixed">
@@ -54,7 +54,7 @@ export function renderLoginView() {
         </div>
 
         <!-- Main Authentication Panel -->
-        <div class="bg-surface-container-lowest dark:bg-surface-container-low rounded-xl shadow-md p-space-xl flex flex-col border border-outline-variant/30">
+        <div class="bg-surface-container-lowest dark:bg-surface-container-low rounded-2xl shadow-md p-space-xl flex flex-col border border-outline-variant/30">
           <!-- Brand Header -->
           <div class="flex flex-col items-center text-center pb-space-md">
             <div class="w-14 h-14 bg-surface-container-low dark:bg-surface-container-high rounded-xl flex items-center justify-center p-2 mb-space-md shadow-sm">
@@ -73,7 +73,7 @@ export function renderLoginView() {
           </div>
 
           <!-- Auth Mode Tab Switcher: Sign In vs Create Account -->
-          <div class="flex bg-surface-container dark:bg-surface-container-high p-1 rounded-xl mb-space-md">
+          <div class="flex bg-surface-container dark:bg-surface-container-high p-1 rounded-xl mb-3">
             <button 
               id="auth-tab-signin" 
               type="button"
@@ -98,26 +98,186 @@ export function renderLoginView() {
             </button>
           </div>
 
-          <!-- Live Terminal Badge -->
-          <div class="bg-surface-container-low dark:bg-surface-container-high rounded-lg px-3 py-2 flex items-center justify-between mb-space-md">
-            <div class="flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-primary-container animate-pulse"></span>
-              <span class="font-code-num text-code-num text-on-surface-variant text-[11px]">${profile.posNode}</span>
-            </div>
-            <span class="font-code-num text-code-num text-[11px] text-primary font-medium dark:text-primary-fixed">PHONE OTP AUTH</span>
+          <!-- Method Selector: Phone OTP vs Email / Password -->
+          <div class="flex items-center justify-center gap-2 mb-space-md">
+            <button 
+              id="auth-method-phone" 
+              type="button"
+              class="text-xs px-3 py-1 rounded-full border transition-all cursor-pointer ${
+                authMethod === 'phone'
+                  ? 'bg-primary/10 text-primary border-primary font-semibold'
+                  : 'text-on-surface-variant border-outline-variant/40 hover:text-on-surface'
+              }"
+            >
+              <span class="material-symbols-outlined text-[14px] align-middle mr-1">call</span>
+              Phone OTP
+            </button>
+            <button 
+              id="auth-method-email" 
+              type="button"
+              class="text-xs px-3 py-1 rounded-full border transition-all cursor-pointer ${
+                authMethod === 'email'
+                  ? 'bg-primary/10 text-primary border-primary font-semibold'
+                  : 'text-on-surface-variant border-outline-variant/40 hover:text-on-surface'
+              }"
+            >
+              <span class="material-symbols-outlined text-[14px] align-middle mr-1">mail</span>
+              Email & Password
+            </button>
           </div>
 
           <!-- Invisible reCAPTCHA container for Firebase Phone Auth -->
           <div id="recaptcha-container"></div>
 
-          <!-- Login / Signup Form -->
-          <form class="flex flex-col gap-space-md" id="pharmacy-login-form">
-            ${!otpSent ? `
-              <!-- Step 1: Phone Number Input (+ Full Name if Signup) -->
+          <!-- ========================================== -->
+          <!-- METHOD 1: PHONE OTP AUTHENTICATION         -->
+          <!-- ========================================== -->
+          ${authMethod === 'phone' ? `
+            <form class="flex flex-col gap-space-md" id="pharmacy-phone-form">
+              ${!otpSent ? `
+                <!-- Signup Name and Pharmacy if creating account -->
+                ${activeAuthMode === 'signup' ? `
+                  <div class="flex flex-col gap-1.5">
+                    <label class="font-label-md text-label-md text-on-surface font-medium" for="login-fullname">
+                      Full Name & Role
+                    </label>
+                    <div class="relative flex items-center">
+                      <span class="absolute left-3 text-outline flex items-center pointer-events-none">
+                        <span class="material-symbols-outlined text-[18px]">person</span>
+                      </span>
+                      <input 
+                        autocomplete="name" 
+                        class="w-full pl-9 pr-3 py-2.5 bg-surface-container-low dark:bg-surface-container-high text-on-surface font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all" 
+                        id="login-fullname" 
+                        name="fullname" 
+                        placeholder="e.g. Dr. K. Rama Rao" 
+                        required 
+                        type="text" 
+                        value="Dr. K. Rama Rao"
+                      />
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col gap-1.5">
+                    <label class="font-label-md text-label-md text-on-surface font-medium" for="login-pharmacy-name">
+                      Pharmacy Name
+                    </label>
+                    <div class="relative flex items-center">
+                      <span class="absolute left-3 text-outline flex items-center pointer-events-none">
+                        <span class="material-symbols-outlined text-[18px]">storefront</span>
+                      </span>
+                      <input 
+                        class="w-full pl-9 pr-3 py-2.5 bg-surface-container-low dark:bg-surface-container-high text-on-surface font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all" 
+                        id="login-pharmacy-name" 
+                        name="pharmacyName" 
+                        placeholder="e.g. Sri Maheswari Medical" 
+                        required 
+                        type="text" 
+                        value="${profile.name || 'Sri Maheswari Medical'}"
+                      />
+                    </div>
+                  </div>
+                ` : ''}
+
+                <!-- Phone Field with Country Code -->
+                <div class="flex flex-col gap-1.5">
+                  <label class="font-label-md text-label-md text-on-surface font-medium flex items-center justify-between" for="login-phone">
+                    <span>Mobile Phone Number</span>
+                    <span class="font-code-num text-label-sm text-outline font-normal">SMS OTP</span>
+                  </label>
+                  <div class="flex items-center gap-2">
+                    <div class="w-16 px-2.5 py-2.5 bg-surface-container-low dark:bg-surface-container-high text-on-surface font-mono text-body-md rounded-lg shadow-sm text-center flex-shrink-0 font-medium">
+                      +91
+                    </div>
+                    <div class="relative flex-1 flex items-center">
+                      <span class="absolute left-3 text-outline flex items-center pointer-events-none">
+                        <span class="material-symbols-outlined text-[18px]">call</span>
+                      </span>
+                      <input 
+                        autocomplete="tel" 
+                        class="w-full pl-9 pr-3 py-2.5 bg-surface-container-low dark:bg-surface-container-high text-on-surface font-code-num text-body-md rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all tracking-wider" 
+                        id="login-phone" 
+                        name="phoneNumber" 
+                        placeholder="98490 12345" 
+                        required 
+                        type="tel" 
+                        value="98490 12345"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <button 
+                  class="w-full mt-2 py-3 px-4 bg-primary-container text-on-primary font-headline-sm text-headline-sm rounded-lg shadow-sm hover:opacity-95 active:scale-[0.98] flex items-center justify-center gap-2 transition-all cursor-pointer" 
+                  id="login-phone-submit-btn" 
+                  type="submit"
+                >
+                  <span class="material-symbols-outlined text-[18px]">sms</span>
+                  <span id="login-phone-btn-text">Send Verification OTP</span>
+                </button>
+              ` : `
+                <!-- OTP Entry Step -->
+                <div class="flex flex-col gap-space-sm py-2">
+                  <div class="flex items-center justify-between">
+                    <span class="font-label-md text-label-md text-on-surface font-medium">Enter 6-Digit OTP</span>
+                    <button 
+                      id="login-change-phone-btn" 
+                      type="button" 
+                      class="font-label-sm text-label-sm text-primary hover:underline cursor-pointer bg-transparent border-none p-0"
+                    >
+                      Change Number
+                    </button>
+                  </div>
+
+                  <div class="bg-surface-container-low dark:bg-surface-container-high p-2.5 rounded-lg text-center font-body-sm text-body-sm text-on-surface-variant">
+                    Sent to <strong class="text-on-surface font-mono">${enteredPhone}</strong>
+                  </div>
+
+                  <div class="relative flex items-center justify-center py-2">
+                    <input 
+                      autocomplete="one-time-code" 
+                      class="w-full text-center py-3 bg-surface-container-low dark:bg-surface-container-high text-on-surface font-mono text-2xl font-bold tracking-[0.5em] rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all" 
+                      id="login-otp-code" 
+                      maxlength="6" 
+                      name="otpCode" 
+                      placeholder="••••••" 
+                      required 
+                      type="text" 
+                      value="123456"
+                    />
+                  </div>
+
+                  <div class="flex items-center justify-between text-body-sm text-body-sm text-on-surface-variant px-1">
+                    <span>Didn't receive code?</span>
+                    <button 
+                      id="login-resend-btn" 
+                      type="button" 
+                      class="font-medium text-primary hover:underline cursor-pointer bg-transparent border-none p-0"
+                    >
+                      Resend OTP
+                    </button>
+                  </div>
+
+                  <button 
+                    class="w-full mt-2 py-3 px-4 bg-primary-container text-on-primary font-headline-sm text-headline-sm rounded-lg shadow-sm hover:opacity-95 active:scale-[0.98] flex items-center justify-center gap-2 transition-all cursor-pointer" 
+                    id="login-otp-submit-btn" 
+                    type="submit"
+                  >
+                    <span class="material-symbols-outlined text-[18px]">verified</span>
+                    <span id="login-verify-btn-text">Verify & Open Dashboard</span>
+                  </button>
+                </div>
+              `}
+            </form>
+          ` : `
+            <!-- ========================================== -->
+            <!-- METHOD 2: EMAIL & PASSWORD AUTHENTICATION  -->
+            <!-- ========================================== -->
+            <form class="flex flex-col gap-space-md" id="pharmacy-email-form">
               ${activeAuthMode === 'signup' ? `
                 <div class="flex flex-col gap-1.5">
-                  <label class="font-label-md text-label-md text-on-surface font-medium" for="login-fullname">
-                    Full Name & Role
+                  <label class="font-label-md text-label-md text-on-surface font-medium" for="email-fullname">
+                    Full Name
                   </label>
                   <div class="relative flex items-center">
                     <span class="absolute left-3 text-outline flex items-center pointer-events-none">
@@ -126,9 +286,9 @@ export function renderLoginView() {
                     <input 
                       autocomplete="name" 
                       class="w-full pl-9 pr-3 py-2.5 bg-surface-container-low dark:bg-surface-container-high text-on-surface font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all" 
-                      id="login-fullname" 
+                      id="email-fullname" 
                       name="fullname" 
-                      placeholder="e.g. Dr. K. Rama Rao" 
+                      placeholder="Dr. K. Rama Rao" 
                       required 
                       type="text" 
                       value="Dr. K. Rama Rao"
@@ -137,8 +297,8 @@ export function renderLoginView() {
                 </div>
 
                 <div class="flex flex-col gap-1.5">
-                  <label class="font-label-md text-label-md text-on-surface font-medium" for="login-pharmacy-name">
-                    Pharmacy / Dispensary Name
+                  <label class="font-label-md text-label-md text-on-surface font-medium" for="email-pharmacy-name">
+                    Pharmacy Name
                   </label>
                   <div class="relative flex items-center">
                     <span class="absolute left-3 text-outline flex items-center pointer-events-none">
@@ -146,125 +306,110 @@ export function renderLoginView() {
                     </span>
                     <input 
                       class="w-full pl-9 pr-3 py-2.5 bg-surface-container-low dark:bg-surface-container-high text-on-surface font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all" 
-                      id="login-pharmacy-name" 
+                      id="email-pharmacy-name" 
                       name="pharmacyName" 
-                      placeholder="e.g. Sri Maheswari Medical" 
+                      placeholder="Sri Maheswari Medical" 
                       required 
                       type="text" 
                       value="${profile.name || 'Sri Maheswari Medical'}"
                     />
                   </div>
                 </div>
+
+                <div class="flex flex-col gap-1.5">
+                  <label class="font-label-md text-label-md text-on-surface font-medium" for="email-role">
+                    Role & Permissions
+                  </label>
+                  <select 
+                    id="email-role"
+                    class="w-full px-3 py-2.5 bg-surface-container-low dark:bg-surface-container-high text-on-surface font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                  >
+                    <option value="owner" selected>Pharmacy Owner (Full Administrator)</option>
+                    <option value="staff">Staff Pharmacist / Dispenser</option>
+                  </select>
+                </div>
               ` : ''}
 
-              <!-- Phone Field with Country Code -->
               <div class="flex flex-col gap-1.5">
-                <label class="font-label-md text-label-md text-on-surface font-medium flex items-center justify-between" for="login-phone">
-                  <span>Mobile Phone Number</span>
-                  <span class="font-code-num text-label-sm text-outline font-normal">SMS OTP</span>
+                <label class="font-label-md text-label-md text-on-surface font-medium" for="email-input">
+                  Email Address
                 </label>
-                <div class="flex items-center gap-2">
-                  <div class="w-16 px-2.5 py-2.5 bg-surface-container-low dark:bg-surface-container-high text-on-surface font-mono text-body-md rounded-lg shadow-sm text-center flex-shrink-0 font-medium">
-                    +91
-                  </div>
-                  <div class="relative flex-1 flex items-center">
-                    <span class="absolute left-3 text-outline flex items-center pointer-events-none">
-                      <span class="material-symbols-outlined text-[18px]">call</span>
-                    </span>
-                    <input 
-                      autocomplete="tel" 
-                      class="w-full pl-9 pr-3 py-2.5 bg-surface-container-low dark:bg-surface-container-high text-on-surface font-code-num text-body-md rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all tracking-wider" 
-                      id="login-phone" 
-                      name="phoneNumber" 
-                      placeholder="98490 12345" 
-                      required 
-                      type="tel" 
-                      value="98490 12345"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <!-- Action: Send OTP -->
-              <button 
-                class="w-full mt-2 py-3 px-4 bg-primary-container text-on-primary font-headline-sm text-headline-sm rounded-lg shadow-sm hover:opacity-95 active:scale-[0.98] flex items-center justify-center gap-2 transition-all cursor-pointer" 
-                id="login-submit-btn" 
-                type="submit"
-              >
-                <span class="material-symbols-outlined text-[18px]">sms</span>
-                <span id="login-btn-text">Send Verification OTP</span>
-              </button>
-            ` : `
-              <!-- Step 2: OTP Entry Interface -->
-              <div class="flex flex-col gap-space-sm py-2">
-                <div class="flex items-center justify-between">
-                  <span class="font-label-md text-label-md text-on-surface font-medium">Enter 6-Digit OTP</span>
-                  <button 
-                    id="login-change-phone-btn" 
-                    type="button" 
-                    class="font-label-sm text-label-sm text-primary hover:underline cursor-pointer bg-transparent border-none p-0"
-                  >
-                    Change Number
-                  </button>
-                </div>
-
-                <div class="bg-surface-container-low dark:bg-surface-container-high p-2.5 rounded-lg text-center font-body-sm text-body-sm text-on-surface-variant">
-                  Sent to <strong class="text-on-surface font-mono">${enteredPhone}</strong>
-                </div>
-
-                <div class="relative flex items-center justify-center py-2">
+                <div class="relative flex items-center">
+                  <span class="absolute left-3 text-outline flex items-center pointer-events-none">
+                    <span class="material-symbols-outlined text-[18px]">email</span>
+                  </span>
                   <input 
-                    autocomplete="one-time-code" 
-                    class="w-full text-center py-3 bg-surface-container-low dark:bg-surface-container-high text-on-surface font-mono text-2xl font-bold tracking-[0.5em] rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all" 
-                    id="login-otp-code" 
-                    maxlength="6" 
-                    name="otpCode" 
-                    placeholder="••••••" 
+                    autocomplete="email" 
+                    class="w-full pl-9 pr-3 py-2.5 bg-surface-container-low dark:bg-surface-container-high text-on-surface font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all" 
+                    id="email-input" 
+                    name="email" 
+                    placeholder="owner@sribalaji.in" 
                     required 
-                    type="text" 
-                    value="123456"
+                    type="email" 
+                    value="owner@sribalaji.in"
                   />
                 </div>
+              </div>
 
-                <div class="flex items-center justify-between text-body-sm text-body-sm text-on-surface-variant px-1">
-                  <span>Didn't receive code?</span>
-                  <button 
-                    id="login-resend-btn" 
-                    type="button" 
-                    class="font-medium text-primary hover:underline cursor-pointer bg-transparent border-none p-0"
-                  >
-                    Resend OTP
-                  </button>
+              <div class="flex flex-col gap-1.5">
+                <div class="flex items-center justify-between">
+                  <label class="font-label-md text-label-md text-on-surface font-medium" for="password-input">
+                    Password
+                  </label>
+                  ${activeAuthMode === 'signin' ? `
+                    <button 
+                      id="btn-forgot-password" 
+                      type="button" 
+                      class="text-xs text-primary hover:underline cursor-pointer"
+                    >
+                      Forgot?
+                    </button>
+                  ` : ''}
                 </div>
-
-                <!-- Action: Verify OTP -->
-                <button 
-                  class="w-full mt-2 py-3 px-4 bg-primary-container text-on-primary font-headline-sm text-headline-sm rounded-lg shadow-sm hover:opacity-95 active:scale-[0.98] flex items-center justify-center gap-2 transition-all cursor-pointer" 
-                  id="login-verify-btn" 
-                  type="submit"
-                >
-                  <span class="material-symbols-outlined text-[18px]">verified</span>
-                  <span id="login-verify-btn-text">Verify & Open Dashboard</span>
-                </button>
+                <div class="relative flex items-center">
+                  <span class="absolute left-3 text-outline flex items-center pointer-events-none">
+                    <span class="material-symbols-outlined text-[18px]">lock</span>
+                  </span>
+                  <input 
+                    autocomplete="current-password" 
+                    class="w-full pl-9 pr-3 py-2.5 bg-surface-container-low dark:bg-surface-container-high text-on-surface font-body-md text-body-md rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition-all" 
+                    id="password-input" 
+                    minlength="6"
+                    name="password" 
+                    placeholder="••••••••" 
+                    required 
+                    type="password" 
+                    value="Medical@2026"
+                  />
+                </div>
               </div>
-            `}
 
-            <!-- Inline Error / Status Banner -->
-            <div class="bg-error-container text-on-error-container rounded-lg p-2.5 hidden flex items-start gap-2" id="login-error-banner">
-              <span class="material-symbols-outlined text-[18px] text-error flex-shrink-0 mt-0.5" style="font-variation-settings: 'FILL' 1;">error</span>
-              <div class="flex flex-col">
-                <span class="font-label-sm text-label-sm font-semibold uppercase tracking-wider text-error" id="login-error-title">
-                  Verification Required
-                </span>
-                <span class="font-body-sm text-body-sm text-on-error-container leading-tight" id="login-error-text">
-                  Invalid code. Please enter the 6-digit OTP sent to your phone.
-                </span>
-              </div>
+              <button 
+                class="w-full mt-2 py-3 px-4 bg-primary-container text-on-primary font-headline-sm text-headline-sm rounded-lg shadow-sm hover:opacity-95 active:scale-[0.98] flex items-center justify-center gap-2 transition-all cursor-pointer" 
+                id="login-email-submit-btn" 
+                type="submit"
+              >
+                <span class="material-symbols-outlined text-[18px]">${activeAuthMode === 'signup' ? 'person_add' : 'login'}</span>
+                <span id="login-email-btn-text">${activeAuthMode === 'signup' ? 'Create Pharmacy Account' : 'Sign In with Email'}</span>
+              </button>
+            </form>
+          `}
+
+          <!-- Inline Error / Status Banner -->
+          <div class="bg-error-container text-on-error-container rounded-lg p-2.5 hidden flex items-start gap-2 mt-3" id="login-error-banner">
+            <span class="material-symbols-outlined text-[18px] text-error flex-shrink-0 mt-0.5" style="font-variation-settings: 'FILL' 1;">error</span>
+            <div class="flex flex-col">
+              <span class="font-label-sm text-label-sm font-semibold uppercase tracking-wider text-error" id="login-error-title">
+                Authentication Error
+              </span>
+              <span class="font-body-sm text-body-sm text-on-error-container leading-tight" id="login-error-text">
+                Failed to authenticate. Please check your credentials.
+              </span>
             </div>
-          </form>
+          </div>
 
           <!-- Shift Roster Context Note -->
-          <div class="mt-space-lg pt-space-md bg-surface-container-low dark:bg-surface-container-high rounded-lg p-3 flex items-center gap-3">
+          <div class="mt-space-md pt-space-sm bg-surface-container-low dark:bg-surface-container-high rounded-lg p-3 flex items-center gap-3">
             <div class="w-8 h-8 rounded-full bg-surface-container-lowest dark:bg-surface-container-low flex items-center justify-center text-primary-container flex-shrink-0">
               <span class="material-symbols-outlined text-[18px]">verified_user</span>
             </div>
@@ -312,6 +457,30 @@ export function bindLoginEvents(container, router) {
     router.renderCurrentView();
   });
 
+  // Auth Method Switcher: Phone vs Email
+  container.querySelector('#auth-method-phone')?.addEventListener('click', () => {
+    authMethod = 'phone';
+    otpSent = false;
+    router.renderCurrentView();
+  });
+
+  container.querySelector('#auth-method-email')?.addEventListener('click', () => {
+    authMethod = 'email';
+    otpSent = false;
+    router.renderCurrentView();
+  });
+
+  // Error Banner Elements
+  const errorBanner = container.querySelector('#login-error-banner');
+  const errorText = container.querySelector('#login-error-text');
+  const errorTitle = container.querySelector('#login-error-title');
+
+  function showError(title, msg) {
+    if (errorTitle) errorTitle.textContent = title;
+    if (errorText) errorText.textContent = msg;
+    errorBanner?.classList.remove('hidden');
+  }
+
   // Change phone number button
   container.querySelector('#login-change-phone-btn')?.addEventListener('click', () => {
     otpSent = false;
@@ -320,26 +489,23 @@ export function bindLoginEvents(container, router) {
 
   // Resend OTP button
   container.querySelector('#login-resend-btn')?.addEventListener('click', async () => {
-    const errorBanner = container.querySelector('#login-error-banner');
     errorBanner?.classList.add('hidden');
     await authService.sendOtp(enteredPhone);
     alert(`A fresh verification code has been dispatched to ${enteredPhone}`);
   });
 
-  // Form Submission (Send OTP or Verify OTP)
-  const form = container.querySelector('#pharmacy-login-form');
-  const errorBanner = container.querySelector('#login-error-banner');
-  const errorText = container.querySelector('#login-error-text');
-  const errorTitle = container.querySelector('#login-error-title');
-
-  form?.addEventListener('submit', async (e) => {
+  // ==========================================
+  // Form Submission: Phone Auth
+  // ==========================================
+  const phoneForm = container.querySelector('#pharmacy-phone-form');
+  phoneForm?.addEventListener('submit', async (e) => {
     e.preventDefault();
     errorBanner?.classList.add('hidden');
 
     if (!otpSent) {
       // Step 1: Send OTP
       const phoneInput = container.querySelector('#login-phone');
-      const btnText = container.querySelector('#login-btn-text');
+      const btnText = container.querySelector('#login-phone-btn-text');
       enteredPhone = phoneInput ? phoneInput.value.trim() : '98490 12345';
 
       if (btnText) btnText.textContent = "Sending OTP...";
@@ -350,8 +516,7 @@ export function bindLoginEvents(container, router) {
         router.renderCurrentView();
       } else {
         if (btnText) btnText.textContent = "Send Verification OTP";
-        if (errorText) errorText.textContent = res.error || "Failed to send OTP. Please check phone number.";
-        errorBanner?.classList.remove('hidden');
+        showError("Phone Auth Error", res.error || "Failed to send OTP. Please check phone number or try Email Sign-In.");
       }
     } else {
       // Step 2: Verify OTP
@@ -371,17 +536,79 @@ export function bindLoginEvents(container, router) {
       });
 
       if (result.success) {
-        // Initialize real-time pharmacy and database synchronization
         const pharmacyId = result.user?.pharmacyId || 'pharmacy_sri_maheswari';
         pharmacyService.initRealtimeSync(pharmacyId);
         dbService.initFirestoreSync();
         router.navigate('dashboard');
       } else {
         if (verifyBtnText) verifyBtnText.textContent = "Verify & Open Dashboard";
-        if (errorTitle) errorTitle.textContent = "Invalid Code";
-        if (errorText) errorText.textContent = result.error || "Invalid OTP entered. Please try again.";
-        errorBanner?.classList.remove('hidden');
+        showError("Invalid Code", result.error || "Invalid OTP entered. Please try again.");
       }
+    }
+  });
+
+  // ==========================================
+  // Form Submission: Email & Password Auth
+  // ==========================================
+  const emailForm = container.querySelector('#pharmacy-email-form');
+  emailForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorBanner?.classList.add('hidden');
+
+    const email = container.querySelector('#email-input')?.value?.trim();
+    const password = container.querySelector('#password-input')?.value?.trim();
+    const btnText = container.querySelector('#login-email-btn-text');
+
+    if (!email || !password) {
+      showError("Missing Fields", "Please enter both email and password.");
+      return;
+    }
+
+    if (activeAuthMode === 'signup') {
+      const fullName = container.querySelector('#email-fullname')?.value?.trim() || "Dr. K. Rama Rao";
+      const pharmacyName = container.querySelector('#email-pharmacy-name')?.value?.trim() || "Sri Maheswari Medical";
+      const role = container.querySelector('#email-role')?.value || "owner";
+
+      if (btnText) btnText.textContent = "Creating Account...";
+
+      const res = await authService.registerWithEmail(email, password, fullName, pharmacyName, role);
+      if (res.success) {
+        const pharmacyId = res.user?.pharmacyId || 'pharmacy_sri_maheswari';
+        pharmacyService.initRealtimeSync(pharmacyId);
+        dbService.initFirestoreSync();
+        router.navigate('dashboard');
+      } else {
+        if (btnText) btnText.textContent = "Create Pharmacy Account";
+        showError("Registration Failed", res.error || "Could not register account. Try another email.");
+      }
+    } else {
+      if (btnText) btnText.textContent = "Signing In...";
+
+      const res = await authService.loginWithEmail(email, password);
+      if (res.success) {
+        const pharmacyId = res.user?.pharmacyId || 'pharmacy_sri_maheswari';
+        pharmacyService.initRealtimeSync(pharmacyId);
+        dbService.initFirestoreSync();
+        router.navigate('dashboard');
+      } else {
+        if (btnText) btnText.textContent = "Sign In with Email";
+        showError("Sign In Failed", res.error || "Invalid email or password.");
+      }
+    }
+  });
+
+  // Forgot password
+  container.querySelector('#btn-forgot-password')?.addEventListener('click', async () => {
+    const email = container.querySelector('#email-input')?.value?.trim();
+    if (!email) {
+      showError("Reset Password", "Please enter your email address in the field above first.");
+      return;
+    }
+    const res = await authService.resetPassword(email);
+    if (res.success) {
+      alert(`Password reset instructions have been dispatched to ${email}`);
+    } else {
+      showError("Reset Failed", res.error || "Could not send reset email.");
     }
   });
 }
