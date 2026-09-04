@@ -15,49 +15,23 @@ let currentImageBlob = null;
 let previewImageUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuDfEEdNM9uza0VQrfzLezJYBQXFsu7IA2eyFNGRlp7x7qENzqanAfT1DlMj9IIlKuIFwRpLb5qhJs4fjzYEgauwBtATGpASzJYsGwkl3bqLkOIZ-O4Sq96PQ2kD30ahRLofnBvH1Fta83l3WGYlELHhGnP_3EdRnUJf83AdmpnqTW_PySzP8hoXOZfInX4bqbVSiSPZ4Hm3eFua-bt6tuWKFG6YmCkoPaCXgI9NB7QOK5Yhb8Kd_7wpww";
 
 let draftBill = {
-  invoiceNumber: "INV-2024-" + Math.floor(1000 + Math.random() * 9000),
+  invoiceNumber: "INV-" + new Date().getFullYear() + "-" + Math.floor(1000 + Math.random() * 9000),
   invoiceDate: new Date().toISOString().split('T')[0],
   monthDelivered: new Date().toLocaleString("en-US", { month: "long", year: "numeric" }),
-  distributorId: "dist_abc_pharma",
-  distributorName: "ABC Pharma Distributors Ltd.",
-  ocrConfidence: 94,
-  fileName: "INV_SCAN_CAMERA_01.jpg",
-  fileSize: "1.8 MB",
-  items: [
-    {
-      productName: "Augmentin 625 Duo Tablet",
-      genericSalt: "Amoxicillin (500mg) + Clavulanic Acid (125mg)",
-      batchNumber: "AUG-" + Math.floor(1000 + Math.random() * 9000),
-      expiryDate: "2026-11-30",
-      quantity: 15,
-      packSize: "10 Tabs",
-      purchaseRate: 142.50,
-      discount: 5.0,
-      gstRate: 12,
-      taxableValue: 2030.62,
-      total: 2274.30,
-      hasAnomaly: true,
-      anomalyText: "ABC Pharma charges ₹142.50 (+8.2% above Apex Medilink ₹131.70)"
-    },
-    {
-      productName: "Pan-D Capsule",
-      genericSalt: "Pantoprazole (40mg) + Domperidone (30mg)",
-      batchNumber: "PND-" + Math.floor(1000 + Math.random() * 9000),
-      expiryDate: "2026-08-31",
-      quantity: 25,
-      packSize: "15 Caps",
-      purchaseRate: 110.00,
-      discount: 4.0,
-      gstRate: 12,
-      taxableValue: 2640.00,
-      total: 2956.80,
-      hasAnomaly: false
-    }
-  ]
+  distributorId: "",
+  distributorName: "",
+  ocrConfidence: 98,
+  fileName: "",
+  fileSize: "",
+  items: []
 };
 
 export function renderUploadOCRView() {
   const distributors = dbService.getDistributors();
+  if (!draftBill.distributorId && distributors.length > 0) {
+    draftBill.distributorId = distributors[0].id;
+    draftBill.distributorName = distributors[0].name;
+  }
   
   // Calculate totals from line items
   const subtotal = draftBill.items.reduce((sum, it) => sum + (it.taxableValue || (it.quantity * it.purchaseRate * (1 - (it.discount || 0)/100))), 0);
@@ -252,9 +226,12 @@ export function renderUploadOCRView() {
                 id="ocr-distributor-select" 
                 class="w-full h-11 px-space-sm bg-surface-container-low dark:bg-surface-container-high rounded-lg font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary border border-outline-variant/30 cursor-pointer"
               >
-                ${distributors.map(d => `
+                ${distributors.length === 0 ? `
+                  <option value="" disabled selected>-- No distributors found --</option>
+                ` : distributors.map(d => `
                   <option value="${d.id}" ${d.id === draftBill.distributorId ? 'selected' : ''}>${d.name}</option>
                 `).join('')}
+                <option value="__new__">+ Add New Distributor...</option>
               </select>
             </div>
           </div>
@@ -281,7 +258,13 @@ export function renderUploadOCRView() {
 
           <!-- Items Table / Card Stream -->
           <div class="space-y-space-xs">
-            ${draftBill.items.map((item, idx) => `
+            ${draftBill.items.length === 0 ? `
+              <div class="py-8 px-4 text-center text-on-surface-variant border border-dashed border-outline-variant/30 rounded-xl flex flex-col items-center justify-center gap-2">
+                <span class="material-symbols-outlined text-[36px] text-outline">receipt_long</span>
+                <p class="font-medium text-xs text-on-surface">No Line Items Added Yet</p>
+                <p class="text-[11px] max-w-sm">Capture a live photo or upload an invoice image above to extract medicines via OCR, or click "+ Add Medicine" to enter items manually.</p>
+              </div>
+            ` : draftBill.items.map((item, idx) => `
               <div class="p-space-sm rounded-xl bg-surface-container-low dark:bg-surface-container-high border border-outline-variant/30 space-y-2">
                 <div class="flex items-start justify-between gap-2">
                   <div class="flex-1">
@@ -611,6 +594,34 @@ export function bindUploadOCREvents(container, router) {
     }
   });
 
+  // Distributor selector change handler
+  const distSelect = container.querySelector('#ocr-distributor-select');
+  distSelect?.addEventListener('change', async (e) => {
+    if (e.target.value === '__new__') {
+      const name = prompt("Enter New Distributor Name:");
+      if (name && name.trim()) {
+        const phone = prompt("Enter Phone Number:", "+91 98480 ");
+        const newDist = await dbService.addDistributor({
+          name: name.trim(),
+          phone: phone || "+91 98480 00000",
+          gstin: "37AABC" + Math.floor(1000 + Math.random() * 9000) + "F1Z0",
+          paymentTerms: "Net 15 Days"
+        });
+        draftBill.distributorId = newDist.id;
+        draftBill.distributorName = newDist.name;
+        router.renderCurrentView();
+      } else {
+        distSelect.value = draftBill.distributorId || '';
+      }
+    } else {
+      const dist = dbService.getDistributorById(e.target.value);
+      if (dist) {
+        draftBill.distributorId = dist.id;
+        draftBill.distributorName = dist.name;
+      }
+    }
+  });
+
   // Confirm & Save Bill
   container.querySelector('#ocr-save-bill-btn')?.addEventListener('click', async () => {
     const invoiceNum = container.querySelector('#ocr-bill-number').value.trim();
@@ -624,6 +635,24 @@ export function bindUploadOCREvents(container, router) {
     if (draftBill.items.length === 0) {
       alert("Please add at least one line item before saving.");
       return;
+    }
+
+    // Resolve distributor
+    let distId = distSelect?.value || draftBill.distributorId;
+    let distName = draftBill.distributorName;
+
+    if (!distId || distId === '__new__') {
+      const dists = dbService.getDistributors();
+      if (dists.length > 0) {
+        distId = dists[0].id;
+        distName = dists[0].name;
+      } else {
+        alert("Please select or add a distributor for this invoice.");
+        return;
+      }
+    } else {
+      const dist = dbService.getDistributorById(distId);
+      if (dist) distName = dist.name;
     }
 
     isUploadingBill = true;
@@ -652,6 +681,8 @@ export function bindUploadOCREvents(container, router) {
         id: billId,
         invoiceNumber: invoiceNum,
         invoiceDate: invoiceDate,
+        distributorId: distId,
+        distributorName: distName,
         imageUrl: storageUrl,
         subtotal,
         totalTax: gstTotal,

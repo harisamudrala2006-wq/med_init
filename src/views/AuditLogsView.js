@@ -26,7 +26,15 @@ export function renderAuditLogsView() {
 
         <!-- Logs Feed -->
         <div class="bg-surface-container-lowest dark:bg-surface-container rounded-xl shadow-sm border border-outline-variant/30 divide-y divide-outline-variant/20 overflow-hidden">
-          ${logs.map(log => `
+          ${logs.length === 0 ? `
+            <div class="p-12 text-center text-on-surface-variant flex flex-col items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-[48px] text-outline">history</span>
+              <h3 class="font-headline-sm font-semibold text-on-surface">No Audit Records Yet</h3>
+              <p class="font-body-sm text-xs text-on-surface-variant max-w-sm">
+                Actions such as verified bill uploads, distributor payments, inventory adjustments, and profile edits are immutably logged here.
+              </p>
+            </div>
+          ` : logs.map(log => `
             <div class="p-space-md flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors text-body-sm">
               <div class="flex items-start gap-3">
                 <div class="w-8 h-8 rounded-lg bg-surface-container-low dark:bg-surface-container-highest flex items-center justify-center text-primary flex-shrink-0 mt-0.5">

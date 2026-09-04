@@ -46,8 +46,8 @@ export const ocrService = {
           );
 
           return {
-            distributorId: matched ? matched.id : (distributorList[0]?.id || "dist_abc_pharma"),
-            distributorName: data.distributorName || (distributorList[0]?.name || "ABC Pharma Distributors Ltd."),
+            distributorId: matched ? matched.id : (distributorList[0]?.id || ""),
+            distributorName: data.distributorName || (distributorList[0]?.name || "New Distributor"),
             invoiceNumber: data.invoiceNumber,
             invoiceDate: data.invoiceDate,
             monthDelivered: data.monthDelivered || new Date().toLocaleString("en-US", { month: "long", year: "numeric" }),
@@ -70,8 +70,8 @@ export const ocrService = {
     const monthDelivered = now.toLocaleString("en-US", { month: "long", year: "numeric" });
 
     const matchedDistributor = distributorList.length > 0 
-      ? distributorList[0]
-      : { id: "dist_abc_pharma", name: "ABC Pharma Distributors Ltd." };
+      ? distributorList[0] 
+      : { id: "", name: "Select or Enter Distributor" };
 
     const sampleMedicines = [
       {

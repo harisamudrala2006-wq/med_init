@@ -229,6 +229,47 @@ export function renderSettingsView() {
           </form>
         </section>
 
+        <!-- 4. Active Account & Session -->
+        <section class="flex flex-col gap-space-xs">
+          <div class="flex items-center gap-space-xs px-space-2xs">
+            <span class="material-symbols-outlined text-[18px] text-primary">account_circle</span>
+            <span class="font-headline-sm text-headline-sm text-on-surface">Account & Security</span>
+          </div>
+
+          <div class="bg-surface-container-lowest dark:bg-surface-container rounded-xl p-space-md shadow-sm border border-outline-variant/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-12 h-12 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-lg font-mono flex-shrink-0">
+                ${(authService.user?.fullName || 'U').charAt(0).toUpperCase()}
+              </div>
+              <div class="flex flex-col min-w-0">
+                <div class="flex items-center gap-2">
+                  <span class="font-semibold text-on-surface text-base truncate">${authService.user?.fullName || 'Pharmacist'}</span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                    authService.isOwner ? 'bg-primary/10 text-primary border border-primary/30' : 'bg-surface-container-high text-on-surface-variant'
+                  }">
+                    ${authService.user?.role === 'owner' ? 'Pharmacy Owner' : 'Staff Pharmacist'}
+                  </span>
+                </div>
+                <span class="text-xs text-on-surface-variant font-mono truncate">
+                  ${authService.user?.email || authService.user?.phoneNumber || 'Signed in via Firebase Auth'}
+                </span>
+                <span class="text-[11px] text-outline font-mono mt-0.5">
+                  Tenant ID: ${authService.user?.pharmacyId || 'pharmacy_sri_maheswari'}
+                </span>
+              </div>
+            </div>
+
+            <button 
+              id="settings-logout-btn"
+              class="h-10 px-4 rounded-xl border border-error/40 text-error hover:bg-error-container/20 font-semibold text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95 flex-shrink-0"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[18px]">logout</span>
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </section>
+
       </div>
     </main>
   `;
@@ -286,5 +327,13 @@ export function bindSettingsEvents(container, router) {
     dbService.logAudit("Settings Updated", "pharmacies", pharmacyId, `Pharmacy profile updated: ${newName} (GSTIN: ${newGstin})`);
     alert(i18n.t('settingsUpdated'));
     router.renderCurrentView();
+  });
+
+  // Sign out from session
+  container.querySelector('#settings-logout-btn')?.addEventListener('click', async () => {
+    if (confirm('Are you sure you want to sign out from this workstation session?')) {
+      await authService.logout();
+      router.navigate('login');
+    }
   });
 }

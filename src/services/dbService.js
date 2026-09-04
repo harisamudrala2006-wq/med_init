@@ -7,6 +7,7 @@ import {
   setDoc, 
   getDocs, 
   updateDoc,
+  deleteDoc,
   onSnapshot, 
   query, 
   where, 
@@ -154,6 +155,30 @@ class DatabaseService {
     return newDist;
   }
 
+  async deleteDistributor(distributorId) {
+    const dist = this.cache.distributors.find(d => d.id === distributorId);
+    if (!dist) return false;
+
+    this.cache.distributors = this.cache.distributors.filter(d => d.id !== distributorId);
+    this.notify();
+
+    if (db && isRealFirebaseConfigured) {
+      try {
+        await deleteDoc(doc(db, 'distributors', distributorId));
+      } catch (err) {
+        console.error("Firestore error deleting distributor:", err);
+      }
+    }
+
+    this.logAudit(
+      "Distributor Deleted",
+      "distributors",
+      distributorId,
+      `Deleted distributor: ${dist.name}`
+    );
+    return true;
+  }
+
   // ==========================================
   // FINANCIAL LEDGER (Single Source of Truth)
   // Outstanding = Sum(Verified Purchases) - Sum(Verified Payments)
@@ -233,6 +258,39 @@ class DatabaseService {
     );
 
     return newBill;
+  }
+
+  async deletePurchaseBill(billId) {
+    const bill = this.cache.purchaseBills.find(b => b.id === billId);
+    if (!bill) return false;
+
+    // Remove from cache
+    this.cache.purchaseBills = this.cache.purchaseBills.filter(b => b.id !== billId);
+    // Also remove associated batches
+    this.cache.batches = this.cache.batches.filter(b => b.billId !== billId);
+    this.notify();
+
+    if (db && isRealFirebaseConfigured) {
+      try {
+        await deleteDoc(doc(db, 'purchaseBills', billId));
+        // Delete associated batches in Firestore
+        const batchQuery = query(collection(db, 'batches'), where('billId', '==', billId));
+        const batchSnap = await getDocs(batchQuery);
+        const wb = writeBatch(db);
+        batchSnap.docs.forEach(d => wb.delete(d.ref));
+        await wb.commit();
+      } catch (err) {
+        console.error("Firestore error deleting bill:", err);
+      }
+    }
+
+    this.logAudit(
+      "Purchase Bill Deleted",
+      "purchaseBills",
+      billId,
+      `Deleted Invoice #${bill.invoiceNumber} for ${bill.distributorName}`
+    );
+    return true;
   }
 
   // ==========================================

@@ -1,5 +1,6 @@
 // Distributors & Balances View (Preserves Stitch Distributors Design)
 import { dbService } from '../services/dbService.js';
+import { authService } from '../services/authService.js';
 import { i18n } from '../context/i18nState.js';
 
 let searchQuery = '';
@@ -126,14 +127,29 @@ export function renderDistributorsView() {
                       ${dist.phone}
                     </span>
 
-                    <button 
-                      data-view-distributor="${dist.id}"
-                      class="font-label-md text-label-md text-primary dark:text-primary-fixed font-semibold hover:underline flex items-center gap-0.5 cursor-pointer"
-                      type="button"
-                    >
-                      <span>View Ledger</span>
-                      <span class="material-symbols-outlined text-[16px]">chevron_right</span>
-                    </button>
+                    <div class="flex items-center gap-3">
+                      ${authService.isOwner ? `
+                        <button 
+                          data-delete-distributor="${dist.id}"
+                          data-distributor-name="${dist.name}"
+                          class="text-xs text-error hover:underline flex items-center gap-0.5 cursor-pointer"
+                          type="button"
+                          title="Delete Distributor"
+                        >
+                          <span class="material-symbols-outlined text-[15px]">delete</span>
+                          <span>Delete</span>
+                        </button>
+                      ` : ''}
+
+                      <button 
+                        data-view-distributor="${dist.id}"
+                        class="font-label-md text-label-md text-primary dark:text-primary-fixed font-semibold hover:underline flex items-center gap-0.5 cursor-pointer"
+                        type="button"
+                      >
+                        <span>View Ledger</span>
+                        <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+                      </button>
+                    </div>
                   </div>
 
                 </div>
@@ -182,6 +198,27 @@ export function bindDistributorsEvents(container, router) {
     btn.addEventListener('click', () => {
       const distId = btn.getAttribute('data-view-distributor');
       router.navigate(`distributor-detail?id=${distId}`);
+    });
+  });
+
+  // Delete Distributor (Owner only)
+  container.querySelectorAll('[data-delete-distributor]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const distId = btn.getAttribute('data-delete-distributor');
+      const distName = btn.getAttribute('data-distributor-name');
+      const finances = dbService.getDistributorFinances(distId);
+
+      if (finances.outstanding > 0) {
+        alert(`Cannot delete "${distName}" because there is an outstanding ledger balance of ₹${finances.outstanding.toFixed(2)}. Reconcile payments first.`);
+        return;
+      }
+
+      if (confirm(`Are you sure you want to permanently delete distributor "${distName}"?`)) {
+        await dbService.deleteDistributor(distId);
+        alert(`Distributor "${distName}" has been removed.`);
+        router.renderCurrentView();
+      }
     });
   });
 }

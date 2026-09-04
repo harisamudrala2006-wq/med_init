@@ -37,13 +37,27 @@ export function renderPaymentsView() {
             <h2 class="font-headline-sm text-headline-sm text-on-surface">Record New Verified Settlement</h2>
           </div>
 
+          ${distributors.length === 0 ? `
+            <div class="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-800 dark:text-amber-200 text-xs flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-[20px] text-amber-600">info</span>
+                <span>No distributors found. Register a distributor to begin tracking purchases and payments.</span>
+              </div>
+              <a href="#distributors" class="px-3 py-1 bg-primary text-on-primary rounded-lg text-xs font-semibold hover:opacity-90 flex-shrink-0">
+                + Add Distributor
+              </a>
+            </div>
+          ` : ''}
+
           <form id="record-payment-form" class="space-y-4">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-space-sm">
               <!-- Distributor Selector -->
               <div class="flex flex-col gap-1">
                 <label class="font-label-caps text-label-caps text-on-surface-variant font-medium">Select Distributor</label>
-                <select id="pay-distributor-select" class="w-full h-11 px-3 bg-surface-container-low dark:bg-surface-container-high rounded-lg text-body-md text-on-surface focus:ring-2 focus:ring-primary border border-outline-variant/30 cursor-pointer">
-                  ${distributors.map(d => `
+                <select id="pay-distributor-select" class="w-full h-11 px-3 bg-surface-container-low dark:bg-surface-container-high rounded-lg text-body-md text-on-surface focus:ring-2 focus:ring-primary border border-outline-variant/30 cursor-pointer" ${distributors.length === 0 ? 'disabled' : ''}>
+                  ${distributors.length === 0 ? `
+                    <option value="" disabled selected>No registered distributors</option>
+                  ` : distributors.map(d => `
                     <option value="${d.id}">${d.name}</option>
                   `).join('')}
                 </select>
@@ -52,13 +66,13 @@ export function renderPaymentsView() {
               <!-- Payment Amount -->
               <div class="flex flex-col gap-1">
                 <label class="font-label-caps text-label-caps text-on-surface-variant font-medium">Payment Amount (₹)</label>
-                <input id="pay-amount-input" type="number" step="0.01" placeholder="e.g. 5000.00" required class="w-full h-11 px-3 bg-surface-container-low dark:bg-surface-container-high rounded-lg text-body-md text-on-surface font-code-num focus:ring-2 focus:ring-primary border border-outline-variant/30" />
+                <input id="pay-amount-input" type="number" step="0.01" placeholder="e.g. 5000.00" required class="w-full h-11 px-3 bg-surface-container-low dark:bg-surface-container-high rounded-lg text-body-md text-on-surface font-code-num focus:ring-2 focus:ring-primary border border-outline-variant/30" ${distributors.length === 0 ? 'disabled' : ''} />
               </div>
 
               <!-- Payment Method -->
               <div class="flex flex-col gap-1">
                 <label class="font-label-caps text-label-caps text-on-surface-variant font-medium">Payment Method</label>
-                <select id="pay-method-select" class="w-full h-11 px-3 bg-surface-container-low dark:bg-surface-container-high rounded-lg text-body-md text-on-surface focus:ring-2 focus:ring-primary border border-outline-variant/30 cursor-pointer">
+                <select id="pay-method-select" class="w-full h-11 px-3 bg-surface-container-low dark:bg-surface-container-high rounded-lg text-body-md text-on-surface focus:ring-2 focus:ring-primary border border-outline-variant/30 cursor-pointer" ${distributors.length === 0 ? 'disabled' : ''}>
                   <option value="bank_transfer">Bank Transfer (NEFT / RTGS)</option>
                   <option value="upi">UPI / QR Code</option>
                   <option value="cheque">Cheque</option>
@@ -86,21 +100,21 @@ export function renderPaymentsView() {
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-space-sm">
               <div class="flex flex-col gap-1">
                 <label class="font-label-caps text-label-caps text-on-surface-variant font-medium">Reference Number (UTR / Cheque / Txn ID)</label>
-                <input id="pay-ref-input" type="text" placeholder="e.g. HDFC-NEFT-8899201" class="w-full h-11 px-3 bg-surface-container-low dark:bg-surface-container-high rounded-lg text-body-md text-on-surface focus:ring-2 focus:ring-primary border border-outline-variant/30" />
+                <input id="pay-ref-input" type="text" placeholder="e.g. HDFC-NEFT-8899201" class="w-full h-11 px-3 bg-surface-container-low dark:bg-surface-container-high rounded-lg text-body-md text-on-surface focus:ring-2 focus:ring-primary border border-outline-variant/30" ${distributors.length === 0 ? 'disabled' : ''} />
               </div>
 
               <div class="flex flex-col gap-1">
                 <label class="font-label-caps text-label-caps text-on-surface-variant font-medium">Payment Date</label>
-                <input id="pay-date-input" type="date" value="${new Date().toISOString().split('T')[0]}" class="w-full h-11 px-3 bg-surface-container-low dark:bg-surface-container-high rounded-lg text-body-md text-on-surface focus:ring-2 focus:ring-primary border border-outline-variant/30" />
+                <input id="pay-date-input" type="date" value="${new Date().toISOString().split('T')[0]}" class="w-full h-11 px-3 bg-surface-container-low dark:bg-surface-container-high rounded-lg text-body-md text-on-surface focus:ring-2 focus:ring-primary border border-outline-variant/30" ${distributors.length === 0 ? 'disabled' : ''} />
               </div>
 
               <div class="flex flex-col gap-1">
                 <label class="font-label-caps text-label-caps text-on-surface-variant font-medium">Attach Proof / Receipt (Optional)</label>
-                <input id="pay-receipt-file" type="file" accept="image/*,.pdf" class="w-full h-11 px-3 py-2 bg-surface-container-low dark:bg-surface-container-high rounded-lg text-body-sm text-on-surface file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-secondary-container file:text-primary cursor-pointer border border-outline-variant/30" />
+                <input id="pay-receipt-file" type="file" accept="image/*,.pdf" class="w-full h-11 px-3 py-2 bg-surface-container-low dark:bg-surface-container-high rounded-lg text-body-sm text-on-surface file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-secondary-container file:text-primary cursor-pointer border border-outline-variant/30" ${distributors.length === 0 ? 'disabled' : ''} />
               </div>
             </div>
 
-            <button type="submit" id="pay-submit-btn" class="w-full h-12 bg-primary-container text-on-primary font-headline-sm text-body-md rounded-xl flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer">
+            <button type="submit" id="pay-submit-btn" class="w-full h-12 bg-primary-container text-on-primary font-headline-sm text-body-md rounded-xl flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer ${distributors.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}" ${distributors.length === 0 ? 'disabled' : ''}>
               <span class="material-symbols-outlined text-[20px]">check_circle</span>
               <span>Verify & Record Payment Settlement</span>
             </button>
@@ -155,13 +169,19 @@ export function bindPaymentsEvents(container, router) {
   const remEl = container.querySelector('#calc-remaining-outstanding');
 
   function updateCalc() {
-    if (!distSelect || !amountInput) return;
+    if (!distSelect || !amountInput || !priorEl || !amtEl || !remEl) return;
     const distId = distSelect.value;
+    if (!distId) {
+      priorEl.textContent = '₹0.00';
+      amtEl.textContent = '₹0.00';
+      remEl.textContent = '₹0.00';
+      return;
+    }
     const finances = dbService.getDistributorFinances(distId);
     const amount = parseFloat(amountInput.value) || 0;
-    const remaining = Math.max(0, finances.outstanding - amount);
+    const remaining = Math.max(0, (finances?.outstanding || 0) - amount);
 
-    priorEl.textContent = `₹${finances.outstanding.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
+    priorEl.textContent = `₹${(finances?.outstanding || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
     amtEl.textContent = `₹${amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
     remEl.textContent = `₹${remaining.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`;
   }
@@ -174,7 +194,15 @@ export function bindPaymentsEvents(container, router) {
   container.querySelector('#record-payment-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const distId = distSelect.value;
+    if (!distId) {
+      alert("Please select a valid distributor.");
+      return;
+    }
     const dist = dbService.getDistributorById(distId);
+    if (!dist) {
+      alert("Distributor not found. Please select a registered distributor.");
+      return;
+    }
     const amount = parseFloat(amountInput.value);
 
     if (isNaN(amount) || amount <= 0) {

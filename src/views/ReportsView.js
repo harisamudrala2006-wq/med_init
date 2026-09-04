@@ -84,7 +84,15 @@ export function renderReportsView() {
                 </tr>
               </thead>
               <tbody class="divide-y divide-outline-variant/15">
-                ${distributors.map(dist => {
+                ${distributors.length === 0 ? `
+                  <tr>
+                    <td colspan="5" class="py-8 text-center text-on-surface-variant">
+                      <span class="material-symbols-outlined text-[32px] text-outline mb-1 block">local_shipping</span>
+                      <p class="font-medium text-xs">No distributor accounts registered yet.</p>
+                      <p class="text-[11px] text-outline mt-0.5">Register distributors to track ledger balances and payment settlement history.</p>
+                    </td>
+                  </tr>
+                ` : distributors.map(dist => {
                   const f = dbService.getDistributorFinances(dist.id);
                   return `
                     <tr>
@@ -111,7 +119,13 @@ export function renderReportsView() {
             Top Purchased Products by Value
           </h2>
           <div class="space-y-2">
-            ${topProducts.map((p, i) => `
+            ${topProducts.length === 0 ? `
+              <div class="py-8 text-center text-on-surface-variant border border-dashed border-outline-variant/30 rounded-xl">
+                <span class="material-symbols-outlined text-[32px] text-outline mb-1 block">inventory_2</span>
+                <p class="font-medium text-xs">No purchase invoice items recorded yet.</p>
+                <p class="text-[11px] text-outline mt-0.5">Verified purchase bills will automatically rank top medicines here.</p>
+              </div>
+            ` : topProducts.map((p, i) => `
               <div class="flex items-center justify-between p-2 rounded-lg bg-surface-container-low dark:bg-surface-container-high text-body-sm">
                 <div class="flex items-center gap-3">
                   <span class="w-6 h-6 rounded-full bg-primary-container text-on-primary font-bold text-[12px] flex items-center justify-center">

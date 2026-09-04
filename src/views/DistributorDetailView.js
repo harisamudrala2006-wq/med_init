@@ -9,7 +9,24 @@ let activeTab = 'invoices';
 export function renderDistributorDetailView(distributorId) {
   const dist = dbService.getDistributorById(distributorId) || dbService.getDistributors()[0];
   if (!dist) {
-    return `<div class="p-8 text-center text-on-surface">Distributor not found.</div>`;
+    return `
+      <main class="flex flex-col relative w-full pt-16 pb-24 lg:pl-64 bg-background dark:bg-surface min-h-screen">
+        <div class="flex flex-col w-full px-gutter-mobile py-space-md max-w-max-width mx-auto">
+          <div class="flex items-center gap-2 mb-4">
+            <button id="detail-back-btn" class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container transition-colors cursor-pointer text-on-surface">
+              <span class="material-symbols-outlined text-[24px]">arrow_back</span>
+            </button>
+            <span class="font-label-md text-label-md text-on-surface-variant">Distributors / Not Found</span>
+          </div>
+          <div class="bg-surface-container-lowest dark:bg-surface-container rounded-2xl p-12 text-center text-on-surface-variant border border-outline-variant/30 flex flex-col items-center justify-center gap-2">
+            <span class="material-symbols-outlined text-[48px] text-outline">local_shipping</span>
+            <h2 class="font-headline-md text-headline-md text-on-surface">Distributor Not Found</h2>
+            <p class="font-body-sm text-xs">The requested distributor ledger does not exist or has been removed.</p>
+            <a href="#distributors" class="mt-4 px-4 py-2 bg-primary text-on-primary rounded-xl font-semibold text-xs">Return to Distributors</a>
+          </div>
+        </div>
+      </main>
+    `;
   }
 
   const finances = dbService.getDistributorFinances(dist.id);
@@ -165,7 +182,13 @@ export function renderDistributorDetailView(distributorId) {
         <!-- Ledger Table / List -->
         <div class="space-y-space-xs">
           ${activeTab === 'invoices' ? (
-            bills.length === 0 ? `<div class="p-6 text-center text-on-surface-variant">No invoices recorded for this distributor.</div>` :
+            bills.length === 0 ? `
+              <div class="bg-surface-container-lowest dark:bg-surface-container rounded-xl p-8 text-center text-on-surface-variant border border-outline-variant/30 flex flex-col items-center justify-center gap-1.5">
+                <span class="material-symbols-outlined text-[32px] text-outline">receipt_long</span>
+                <p class="font-medium text-xs text-on-surface">No Purchase Invoices</p>
+                <p class="text-[11px]">No verified purchase bills recorded yet for ${dist.name}.</p>
+              </div>
+            ` :
             bills.map(b => `
               <div class="bg-surface-container-lowest dark:bg-surface-container rounded-xl p-space-md shadow-sm border border-outline-variant/30 flex items-center justify-between">
                 <div class="flex items-center gap-3">
@@ -186,7 +209,13 @@ export function renderDistributorDetailView(distributorId) {
               </div>
             `).join('')
           ) : (
-            payments.length === 0 ? `<div class="p-6 text-center text-on-surface-variant">No payments recorded for this distributor.</div>` :
+            payments.length === 0 ? `
+              <div class="bg-surface-container-lowest dark:bg-surface-container rounded-xl p-8 text-center text-on-surface-variant border border-outline-variant/30 flex flex-col items-center justify-center gap-1.5">
+                <span class="material-symbols-outlined text-[32px] text-outline">payments</span>
+                <p class="font-medium text-xs text-on-surface">No Payment Receipts</p>
+                <p class="text-[11px]">No payment settlements recorded yet for ${dist.name}.</p>
+              </div>
+            ` :
             payments.map(p => `
               <div class="bg-surface-container-lowest dark:bg-surface-container rounded-xl p-space-md shadow-sm border border-outline-variant/30 flex items-center justify-between">
                 <div class="flex items-center gap-3">

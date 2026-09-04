@@ -1,5 +1,6 @@
 // Purchase Bills & Invoices View (Preserves Stitch Bills Design)
 import { dbService } from '../services/dbService.js';
+import { authService } from '../services/authService.js';
 import { i18n } from '../context/i18nState.js';
 
 let activeFilter = 'all';
@@ -147,19 +148,83 @@ export function renderBillsView() {
                   </div>
                 </div>
 
-                <!-- Action Button for unverified bill -->
-                ${isPending ? `
-                  <div class="mt-space-xs pt-space-xs border-t border-outline-variant/20 flex justify-end gap-2">
+                <!-- Action Buttons & Item Preview -->
+                <div class="mt-space-xs pt-space-xs border-t border-outline-variant/20 flex flex-wrap items-center justify-between gap-2">
+                  <div class="flex items-center gap-2">
+                    ${(bill.imageUrl || bill.scannedImageUrl) ? `
+                      <a 
+                        href="${bill.imageUrl || bill.scannedImageUrl}" 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        class="px-3 py-1.5 rounded-lg border border-outline-variant/30 text-xs font-semibold text-primary hover:bg-surface-container-low flex items-center gap-1 transition-colors"
+                      >
+                        <span class="material-symbols-outlined text-[16px]">visibility</span>
+                        <span>View Scanned Bill</span>
+                      </a>
+                    ` : ''}
+
                     <button 
-                      data-verify-bill="${bill.id}"
-                      class="px-4 py-2 bg-primary text-on-primary rounded-lg font-label-md text-label-md flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
+                      data-toggle-items="${bill.id}"
+                      class="px-3 py-1.5 rounded-lg border border-outline-variant/30 text-xs font-semibold text-on-surface-variant hover:text-on-surface flex items-center gap-1 cursor-pointer transition-colors"
                       type="button"
                     >
-                      <span class="material-symbols-outlined text-[16px]">check_circle</span>
-                      <span>Verify & Update Inventory</span>
+                      <span class="material-symbols-outlined text-[16px]">list_alt</span>
+                      <span>Items (${(bill.items || []).length})</span>
                     </button>
                   </div>
-                ` : ''}
+
+                  <div class="flex items-center gap-2">
+                    ${isPending ? `
+                      <button 
+                        data-verify-bill="${bill.id}"
+                        class="px-3 py-1.5 bg-primary text-on-primary rounded-lg font-label-md text-label-md flex items-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
+                        type="button"
+                      >
+                        <span class="material-symbols-outlined text-[16px]">check_circle</span>
+                        <span>Verify Bill</span>
+                      </button>
+                    ` : ''}
+
+                    ${authService.isOwner ? `
+                      <button 
+                        data-delete-bill="${bill.id}"
+                        class="px-2.5 py-1.5 text-xs text-error hover:bg-error-container/20 rounded-lg flex items-center gap-1 cursor-pointer transition-colors"
+                        type="button"
+                        title="Delete Invoice"
+                      >
+                        <span class="material-symbols-outlined text-[16px]">delete</span>
+                      </button>
+                    ` : ''}
+                  </div>
+                </div>
+
+                <!-- Expanded Line Items Table -->
+                <div id="items-preview-${bill.id}" class="hidden mt-2 p-3 bg-surface-container-low dark:bg-surface-container-high rounded-xl border border-outline-variant/20 overflow-x-auto">
+                  <table class="w-full text-left text-xs">
+                    <thead>
+                      <tr class="border-b border-outline-variant/20 text-on-surface-variant font-label-caps">
+                        <th class="pb-1.5">Medicine</th>
+                        <th class="pb-1.5">Batch</th>
+                        <th class="pb-1.5">Expiry</th>
+                        <th class="pb-1.5 text-right">Qty</th>
+                        <th class="pb-1.5 text-right">Rate (₹)</th>
+                        <th class="pb-1.5 text-right">Total (₹)</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-outline-variant/10">
+                      ${(bill.items || []).map(it => `
+                        <tr>
+                          <td class="py-1.5 font-medium text-on-surface">${it.productName}</td>
+                          <td class="py-1.5 font-mono text-on-surface-variant">${it.batchNumber}</td>
+                          <td class="py-1.5 text-on-surface-variant">${it.expiryDate}</td>
+                          <td class="py-1.5 text-right font-mono">${it.quantity}</td>
+                          <td class="py-1.5 text-right font-mono">${Number(it.purchaseRate).toFixed(2)}</td>
+                          <td class="py-1.5 text-right font-mono font-semibold text-on-surface">${Number(it.total || (it.quantity * it.purchaseRate)).toFixed(2)}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             `;
           }).join('')}
@@ -190,15 +255,35 @@ export function bindBillsEvents(container, router) {
     });
   });
 
+  // Toggle line items table
+  container.querySelectorAll('[data-toggle-items]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const billId = btn.getAttribute('data-toggle-items');
+      const table = container.querySelector(`#items-preview-${billId}`);
+      table?.classList.toggle('hidden');
+    });
+  });
+
   // Quick verify
   container.querySelectorAll('[data-verify-bill]').forEach(btn => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const billId = btn.getAttribute('data-verify-bill');
       const bill = dbService.getPurchaseBillById(billId);
       if (bill) {
         bill.status = 'verified';
-        dbService.savePurchaseBill(bill);
+        await dbService.savePurchaseBill(bill);
         alert(`Bill #${bill.invoiceNumber} successfully verified! Stock batches and distributor ledger have been updated.`);
+        router.renderCurrentView();
+      }
+    });
+  });
+
+  // Delete bill (owner only)
+  container.querySelectorAll('[data-delete-bill]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const billId = btn.getAttribute('data-delete-bill');
+      if (confirm("Are you sure you want to delete this bill? Associated batch inventory will also be adjusted.")) {
+        await dbService.deletePurchaseBill(billId);
         router.renderCurrentView();
       }
     });
