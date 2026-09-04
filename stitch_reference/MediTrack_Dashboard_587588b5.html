@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}.material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "outline-variant": "#bdc9c6", "error": "#ba1a1a", "tertiary-container": "#467169", "on-tertiary-container": "#c5f3ea", "on-surface": "#0b1c30", "surface-tint": "#006a63", "on-secondary-fixed": "#00201e", "on-primary-container": "#a3faef", "on-tertiary-fixed-variant": "#224e47", "on-error": "#ffffff", "on-primary-fixed": "#00201d", "primary-fixed": "#9cf2e8", "secondary-fixed": "#abefe8", "on-surface-variant": "#3e4947", "primary": "#005c55", "primary-fixed-dim": "#80d5cb", "on-tertiary": "#ffffff", "surface-dim": "#cbdbf5", "inverse-primary": "#80d5cb", "on-secondary": "#ffffff", "tertiary": "#2d5951", "primary-container": "#0f766e", "on-primary": "#ffffff", "surface-container": "#e5eeff", "outline": "#6e7977", "on-primary-fixed-variant": "#00504a", "secondary": "#216963", "on-secondary-container": "#266d68", "error-container": "#ffdad6", "surface-container-highest": "#d3e4fe", "tertiary-fixed-dim": "#a2d0c6", "surface-bright": "#f8f9ff", "surface-container-low": "#eff4ff", "surface-variant": "#d3e4fe", "on-tertiary-fixed": "#00201c", "on-error-container": "#93000a", "tertiary-fixed": "#bdece2", "inverse-on-surface": "#eaf1ff", "secondary-container": "#a8ece5", "surface-container-high": "#dce9ff", "surface": "#f8f9ff", "surface-container-lowest": "#ffffff", "secondary-fixed-dim": "#8fd3cc", "on-secondary-fixed-variant": "#00504b", "background": "#f8f9ff", "inverse-surface": "#213145", "on-background": "#0b1c30" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "space-3xl": "3rem", "space-sm": "0.75rem", "space-lg": "1.5rem", "gutter-tablet": "1.5rem", "gutter-desktop": "1.5rem", "margin-desktop": "2rem", "space-xl": "2rem", "space-2xs": "0.25rem", "margin-tablet": "1.5rem", "space-2xl": "2.5rem", "space-md": "1rem", "max-width": "1440px", "gutter-mobile": "1rem", "margin-mobile": "1rem", "space-xs": "0.5rem" }, "fontFamily": { "label-md": ["Inter"], "display-lg": ["Inter"], "body-md": ["Inter"], "display-lg-mobile": ["Inter"], "headline-lg": ["Inter"], "headline-sm": ["Inter"], "body-lg": ["Inter"], "headline-md": ["Inter"], "label-caps": ["Inter"], "code-md": ["Inter"], "body-sm": ["Inter"], "label-lg": ["Inter"] }, "fontSize": { "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "500" }], "display-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }], "display-lg-mobile": ["26px", { "lineHeight": "34px", "letterSpacing": "-0.01em", "fontWeight": "700" }], "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.015em", "fontWeight": "600" }], "headline-sm": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "600" }], "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }], "headline-md": ["20px", { "lineHeight": "28px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "label-caps": ["11px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }], "code-md": ["13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "500" }], "body-sm": ["12px", { "lineHeight": "16px", "letterSpacing": "0.01em", "fontWeight": "400" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.005em", "fontWeight": "500" }] } } } }</script><style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head><body class="bg-background font-body-md text-body-md text-on-surface flex flex-col min-h-screen selection:bg-secondary-container selection:text-on-secondary-fixed"><header class="fixed top-0 w-full z-50 pt-safe bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="h-16 px-gutter-mobile flex items-center justify-between gap-space-xs max-w-max-width mx-auto"><div class="flex items-center gap-space-xs min-w-0 flex-1"><img alt="Brand logo. - Primary color: #059669
+- Font: inter
+- Mode: light
+- Roundness: rounded-md
+" class="h-8 w-auto object-contain flex-shrink-0" src="https://lh3.googleusercontent.com/aida/AEtjO1UJX0m_oJsrGXsjCW2mNCk1U7pLF8i5fwWLBEJhMzQzSJzPXAJXHz8w3y4pu5cUbP8YKoR9VxJJOnPDppm2iYUrl3PFngg4FN6nDgxshozO7ttJdr0uZ_HztSbu2NhkCBA_rOwCje5-iInw96w6075e6C16-CaX7T9xw0L2caCHq4n4bKkD9qT3klfOPUwzsdWRYl6ID3TjRctiv_u52N1eMc1UfRmpP7H1NwatndtZirZgAJksjyfbzcA"/><div class="flex flex-col min-w-0"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight truncate leading-tight">Sri Balaji Pharmacy</span><span class="font-label-caps text-label-caps text-on-surface-variant truncate uppercase">Pharmacy Management</span></div></div><div class="flex items-center gap-space-2xs flex-shrink-0"><button aria-label="Switch Language" class="h-9 px-space-xs rounded-full bg-surface-container-low flex items-center gap-space-2xs text-on-surface-variant hover:text-on-surface transition-colors"><span class="font-label-caps text-label-caps font-bold text-primary">EN</span><span class="font-body-sm text-body-sm text-outline">|</span><span class="font-label-caps text-label-caps text-on-surface-variant">తె</span></button><button aria-label="Notifications" class="w-11 h-11 relative rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors"><span class="material-symbols-outlined text-[22px]">notifications</span><span class="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-error ring-2 ring-surface-container-lowest"></span></button><button aria-label="Profile" class="w-11 h-11 flex items-center justify-center rounded-full p-space-2xs"><img alt="Profile" class="w-8 h-8 rounded-full object-cover ring-1 ring-outline-variant/40" src="https://lh3.googleusercontent.com/aida/AEtjO1UZoBKOHjHUODpUTe3Q4kty05mIpB0r1JX3boVPQ1WnRcgWU7I-kt4UypaV0cEi5J6O1H_VWVcbZL2oyIqN0HP3ISJCejlviybtoPCjHXYD562hlFM0Mdcr_m8R3pf0iTNN94rTDK8z1Nfi09mulscLhSauEwpQcym6b7TFYu7y2n5jdooLEd7KyZEEc65u3O9W12A0Mr2vZZ5_FpVUpIDuDHrUIzQfinQrtznBZo-dlJiu-qDl1-Q9gsrN"/></button></div></div></header><main class="flex flex-col relative w-full pt-16 pb-24 bg-background min-h-screen"><div class="hidden"><span class="font-headline-md text-headline-md">Dashboard</span></div><div class="flex flex-col w-full px-gutter-mobile space-y-space-md max-w-max-width mx-auto">
+<!-- Pharmacy Operating Status Header Pill -->
+<div class="flex items-center justify-between bg-surface-container-lowest rounded-xl p-space-sm shadow-sm">
+<div class="flex items-center gap-space-xs min-w-0">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-primary-container text-[18px]">verified</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">Sri Balaji MedStore</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary inline-block"></span>
+          Reconciled Shift Active • Till #02
+        </span>
+</div>
+</div>
+<span class="font-label-caps text-label-caps bg-surface-container px-space-xs py-1 rounded-full text-primary font-semibold flex-shrink-0">
+      LIVE OCR
+    </span>
+</div>
+<!-- Financial Summary: 2x2 Grid -->
+<section class="space-y-space-xs">
+<div class="flex items-center justify-between px-space-2xs">
+<span class="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wider">Financial Overview</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">March 2025</span>
+</div>
+<div class="grid grid-cols-2 gap-space-xs">
+<!-- Outstanding (Prominent Metric) -->
+<div class="bg-primary-container text-on-primary rounded-xl p-space-sm shadow-sm flex flex-col justify-between relative overflow-hidden">
+<div class="space-y-1">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-on-primary-container uppercase tracking-wide">Outstanding</span>
+<span class="material-symbols-outlined text-on-primary-container text-[18px]">pending_actions</span>
+</div>
+<p class="font-headline-lg text-headline-lg font-bold tracking-tight">₹71,538.40</p>
+</div>
+<div class="pt-space-xs flex items-center gap-1">
+<span class="font-label-md text-label-md bg-white/20 text-white px-2 py-0.5 rounded-full">3 Invoices Due</span>
+</div>
+</div>
+<!-- Total Purchases -->
+<div class="bg-surface-container-lowest rounded-xl p-space-sm shadow-sm flex flex-col justify-between">
+<div class="space-y-1">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wide">Purchases</span>
+<span class="material-symbols-outlined text-outline text-[18px]">shopping_cart</span>
+</div>
+<p class="font-headline-md text-headline-md text-on-surface font-semibold tracking-tight">₹2,75,200.00</p>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant pt-space-xs">This Month • 24 Invoices</p>
+</div>
+<!-- Total Paid -->
+<div class="bg-surface-container-lowest rounded-xl p-space-sm shadow-sm flex flex-col justify-between">
+<div class="space-y-1">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wide">Total Paid</span>
+<span class="material-symbols-outlined text-primary text-[18px]">check_circle</span>
+</div>
+<p class="font-headline-md text-headline-md text-on-surface font-semibold tracking-tight">₹2,03,661.60</p>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant pt-space-xs">Reconciled Bank &amp; UPI</p>
+</div>
+<!-- Expiring Soon -->
+<div class="bg-surface-container-lowest rounded-xl p-space-sm shadow-sm flex flex-col justify-between">
+<div class="space-y-1">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wide">Expiring Soon</span>
+<span class="material-symbols-outlined text-error text-[18px]">hourglass_bottom</span>
+</div>
+<p class="font-headline-md text-headline-md text-on-surface font-semibold tracking-tight">14 Items</p>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant pt-space-xs">Within 30–60 Days</p>
+</div>
+</div>
+</section>
+<!-- Quick Actions -->
+<section class="space-y-space-xs">
+<span class="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wider px-space-2xs">Fast Dispense &amp; Intake</span>
+<div class="grid grid-cols-2 gap-space-xs">
+<!-- Upload Bill -->
+<button class="flex items-center gap-space-xs bg-primary-container text-on-primary rounded-xl p-space-sm text-left shadow-sm active:opacity-95 transition-all">
+<div class="w-10 h-10 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[22px]">document_scanner</span>
+</div>
+<div class="min-w-0">
+<span class="font-label-lg text-label-lg font-bold block truncate">Upload Bill</span>
+<span class="font-body-sm text-body-sm text-on-primary-container block truncate">Scan Camera / PDF</span>
+</div>
+</button>
+<!-- Upload Receipt -->
+<button class="flex items-center gap-space-xs bg-secondary-container text-on-secondary-container rounded-xl p-space-sm text-left shadow-sm active:opacity-95 transition-all">
+<div class="w-10 h-10 rounded-lg bg-surface-container-lowest flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined text-[22px]">receipt</span>
+</div>
+<div class="min-w-0">
+<span class="font-label-lg text-label-lg font-bold block truncate">Upload Receipt</span>
+<span class="font-body-sm text-body-sm text-secondary block truncate">Log Supplier Slip</span>
+</div>
+</button>
+<!-- Add Distributor -->
+<button class="flex items-center gap-space-xs bg-surface-container-lowest text-on-surface rounded-xl p-space-sm text-left shadow-sm active:bg-surface-container-low transition-all">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined text-[22px]">local_shipping</span>
+</div>
+<div class="min-w-0">
+<span class="font-label-lg text-label-lg font-semibold block truncate">Add Distributor</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant block truncate">Register Vendor</span>
+</div>
+</button>
+<!-- Add Product -->
+<button class="flex items-center gap-space-xs bg-surface-container-lowest text-on-surface rounded-xl p-space-sm text-left shadow-sm active:bg-surface-container-low transition-all">
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined text-[22px]">medication</span>
+</div>
+<div class="min-w-0">
+<span class="font-label-lg text-label-lg font-semibold block truncate">Add Product</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant block truncate">New Formulation</span>
+</div>
+</button>
+</div>
+</section>
+<!-- Attention Required (Review Center) -->
+<section class="space-y-space-xs">
+<div class="flex items-center justify-between px-space-2xs">
+<div class="flex items-center gap-space-2xs">
+<span class="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wider">Attention Required</span>
+<span class="w-2 h-2 rounded-full bg-error animate-pulse"></span>
+</div>
+<span class="font-label-md text-label-md text-primary font-semibold">3 Unresolved</span>
+</div>
+<div class="space-y-space-xs">
+<!-- OCR Verification Review -->
+<div class="bg-surface-container-lowest rounded-xl p-space-sm shadow-sm space-y-space-xs">
+<div class="flex items-start justify-between gap-space-xs">
+<div class="flex items-start gap-space-xs">
+<div class="w-9 h-9 rounded-lg bg-surface-container-low flex items-center justify-center flex-shrink-0 text-outline">
+<span class="material-symbols-outlined text-[20px]">fact_check</span>
+</div>
+<div class="space-y-0.5">
+<div class="flex items-center gap-space-2xs flex-wrap">
+<span class="font-headline-sm text-headline-sm text-on-surface">2 Bills Need Verification</span>
+<span class="font-label-caps text-label-caps bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full font-medium">
+                  Needs Verification
+                </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Pending optical character audit for batch matching &amp; tax line items</p>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-end gap-space-xs pt-space-2xs">
+<button class="h-8 px-space-sm rounded-lg bg-surface-container text-on-surface font-label-md text-label-md active:bg-surface-container-high transition-colors">
+            Review Batch (2)
+          </button>
+</div>
+</div>
+<!-- Price Anomaly Alert -->
+<div class="bg-surface-container-lowest rounded-xl p-space-sm shadow-sm space-y-space-xs">
+<div class="flex items-start gap-space-xs">
+<div class="w-9 h-9 rounded-lg bg-error-container flex items-center justify-center flex-shrink-0 text-on-error-container">
+<span class="material-symbols-outlined text-[20px]">trending_up</span>
+</div>
+<div class="space-y-0.5 flex-1 min-w-0">
+<div class="flex items-center justify-between gap-space-2xs flex-wrap">
+<span class="font-headline-sm text-headline-sm text-on-surface">1 Potential Price Anomaly</span>
+<span class="font-label-caps text-label-caps bg-error-container text-on-error-container px-2 py-0.5 rounded-full font-bold">
+                High Severity
+              </span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">
+<span class="font-semibold text-on-surface">Paracetamol 500mg</span> billed at <span class="text-error font-semibold">₹2.80/tab</span> vs previous <span class="text-on-surface-variant font-medium">₹2.00/tab</span> (+40%)
+            </p>
+</div>
+</div>
+<div class="flex items-center justify-between pt-space-2xs bg-surface-container-low rounded-lg p-space-xs">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Vendor: Micro Labs Ltd.</span>
+<button class="h-8 px-space-sm rounded-lg bg-primary-container text-on-primary font-label-md text-label-md active:opacity-90 transition-opacity">
+            View Comparison
+          </button>
+</div>
+</div>
+<!-- Payment Due Alert -->
+<div class="bg-surface-container-lowest rounded-xl p-space-sm shadow-sm flex items-center justify-between gap-space-xs">
+<div class="flex items-center gap-space-xs min-w-0">
+<div class="w-9 h-9 rounded-lg bg-secondary-container flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined text-[20px]">schedule</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-headline-sm text-on-surface truncate">MedPlus Wholesalers</span>
+<span class="font-label-caps text-label-caps bg-surface-container px-1.5 py-0.5 rounded text-primary">Due in 3d</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Invoice #MP-9941 • 2 Payments Total</p>
+</div>
+</div>
+<div class="text-right flex-shrink-0">
+<p class="font-headline-sm text-headline-sm font-semibold text-on-surface">₹34,500</p>
+<button class="font-label-md text-label-md text-primary font-bold hover:underline">Pay Now</button>
+</div>
+</div>
+</div>
+</section>
+<!-- Clinical Stock Pulse & Reconciliation Notice -->
+<section class="bg-surface-container-low rounded-xl p-space-sm space-y-space-xs">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">calculate</span>
+<span class="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wide">Audit Verification Log</span>
+</div>
+<span class="font-label-caps text-label-caps bg-surface-container-lowest px-2 py-0.5 rounded-full text-on-surface-variant">100% Balanced</span>
+</div>
+<div class="p-space-xs bg-surface-container-lowest rounded-lg">
+<div class="flex items-center justify-between text-body-sm font-body-sm text-on-surface-variant">
+<span>Purchases (₹2,75,200.00) − Paid (₹2,03,661.60)</span>
+<span class="font-semibold text-primary">= ₹71,538.40</span>
+</div>
+</div>
+</section>
+<!-- Visual Activity Context Card -->
+<div class="relative w-full rounded-xl overflow-hidden shadow-sm">
+<img class="w-full h-32 object-cover" data-alt="A clean, calm pharmaceutical dispensary interior in Hyderabad India with organized medicine shelves, soft natural morning daylight, stainless steel counter with digital scanner, crisp and trustworthy clinical atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAfA5kwMjBwFgNHX9eIbrMD8fOQiW8lNlXSdP2kVcaO25Oy9CK49EXoWAVEwGNr85TrPg6tMnJStRyEDi0x2WNsw_IQ0aqe_ur3bIQw34zrCU42_GxUhdJgJk1n55AUt7pIYxPkup-9mHUuASOJXaFko1q2jy0emlYBqolWEvMFSBoBQYcau5aPbQ9va2e89B-0X6fZQquGC0QWvfDezEkm0YbFTzjQ72oTeMGJ4T3xj74imXK5HmFBmQ"/>
+<div class="absolute inset-0 bg-gradient-to-r from-on-surface/80 via-on-surface/40 to-transparent p-space-sm flex flex-col justify-end">
+<span class="font-label-caps text-label-caps text-surface-container uppercase tracking-wider">Warehouse Batch Stream</span>
+<p class="font-headline-sm text-headline-sm text-surface-container-lowest font-medium">Daily Cold-Chain &amp; Tablet Intake</p>
+</div>
+</div>
+<!-- Recent Activity -->
+<section class="space-y-space-xs">
+<div class="flex items-center justify-between px-space-2xs">
+<span class="font-label-caps text-label-caps uppercase text-on-surface-variant tracking-wider">Recent Activity</span>
+<button class="font-label-md text-label-md text-primary font-semibold">View All</button>
+</div>
+<div class="bg-surface-container-lowest rounded-xl shadow-sm p-space-xs space-y-space-xs">
+<!-- Item 1: Verified Bill -->
+<div class="flex items-center justify-between p-space-xs hover:bg-surface-container-low rounded-lg transition-colors">
+<div class="flex items-center gap-space-xs min-w-0">
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined text-[16px]">receipt_long</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold truncate">ABC Pharma</span>
+<span class="font-label-caps text-label-caps bg-surface-container-high text-on-surface-variant px-1.5 py-0.2 rounded">Verified</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">#INV-2024-8891 • 14 items</p>
+</div>
+</div>
+<div class="text-right flex-shrink-0">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">₹9,518.40</span>
+<span class="block font-body-sm text-body-sm text-on-surface-variant">10:42 AM</span>
+</div>
+</div>
+<!-- Item 2: Recorded Payment -->
+<div class="flex items-center justify-between p-space-xs hover:bg-surface-container-low rounded-lg transition-colors">
+<div class="flex items-center gap-space-xs min-w-0">
+<div class="w-8 h-8 rounded-full bg-secondary-container flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined text-[16px]">payments</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold truncate">Sri Venkateshwara</span>
+<span class="font-label-caps text-label-caps bg-surface-container-high text-primary px-1.5 py-0.2 rounded">Paid</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Receipt #REC-104 • HDFC NetBank</p>
+</div>
+</div>
+<div class="text-right flex-shrink-0">
+<span class="font-headline-sm text-headline-sm font-semibold text-primary">₹15,000.00</span>
+<span class="block font-body-sm text-body-sm text-on-surface-variant">09:15 AM</span>
+</div>
+</div>
+<!-- Item 3: Verified Bill -->
+<div class="flex items-center justify-between p-space-xs hover:bg-surface-container-low rounded-lg transition-colors">
+<div class="flex items-center gap-space-xs min-w-0">
+<div class="w-8 h-8 rounded-full bg-surface-container flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined text-[16px]">receipt_long</span>
+</div>
+<div class="min-w-0">
+<div class="flex items-center gap-1.5">
+<span class="font-label-lg text-label-lg text-on-surface font-semibold truncate">Cipla Depot</span>
+<span class="font-label-caps text-label-caps bg-surface-container-high text-on-surface-variant px-1.5 py-0.2 rounded">Verified</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">#INV-1102 • Respiratory &amp; Antibiotics</p>
+</div>
+</div>
+<div class="text-right flex-shrink-0">
+<span class="font-headline-sm text-headline-sm font-semibold text-on-surface">₹42,000.00</span>
+<span class="block font-body-sm text-body-sm text-on-surface-variant">Yesterday</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Interactive Action Modal Hook (Micro-interaction) -->
+<script>
+    document.querySelectorAll('button').forEach(btn => {
+      btn.addEventListener('click', function(e) {
+        // tactile subtle click effect
+        this.style.transform = 'scale(0.98)';
+        setTimeout(() => {
+          this.style.transform = 'none';
+        }, 120);
+      });
+    });
+  </script>
+</div></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface-container-lowest/90 backdrop-blur-xl shadow-[0_-1px_8px_rgba(0,0,0,0.04)]" data-active-classes="text-primary-container font-semibold"><div class="flex justify-around items-center h-16 px-space-2xs max-w-max-width mx-auto"><a aria-current="page" class="flex flex-col items-center justify-center gap-space-2xs min-w-[56px] h-14 rounded-lg transition-colors text-primary-container font-semibold" data-path="dashboard" href="#"><span class="material-symbols-outlined text-[22px]">dashboard</span><span class="font-label-caps text-label-caps tracking-normal">Dashboard</span></a><a class="flex flex-col items-center justify-center gap-space-2xs min-w-[56px] h-14 rounded-lg text-on-surface-variant hover:text-on-surface transition-colors" data-path="bills" href="#"><span class="material-symbols-outlined text-[22px]">receipt_long</span><span class="font-label-caps text-label-caps tracking-normal">Bills</span></a><a class="flex flex-col items-center justify-center gap-space-2xs min-w-[56px] h-14 rounded-lg text-on-surface-variant hover:text-on-surface transition-colors" data-path="inventory" href="#"><span class="material-symbols-outlined text-[22px]">inventory_2</span><span class="font-label-caps text-label-caps tracking-normal">Inventory</span></a><a class="flex flex-col items-center justify-center gap-space-2xs min-w-[56px] h-14 rounded-lg text-on-surface-variant hover:text-on-surface transition-colors" data-path="distributors" href="#"><span class="material-symbols-outlined text-[22px]">local_shipping</span><span class="font-label-caps text-label-caps tracking-normal">Distributors</span></a><a class="flex flex-col items-center justify-center gap-space-2xs min-w-[56px] h-14 rounded-lg text-on-surface-variant hover:text-on-surface transition-colors" data-path="more-options" href="#"><span class="material-symbols-outlined text-[22px]">more_horiz</span><span class="font-label-caps text-label-caps tracking-normal">More</span></a></div></nav></body></html>

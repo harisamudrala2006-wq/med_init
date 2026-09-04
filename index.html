@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+  <title>Sri Maheswari Medical — Pharmacy Management System</title>
+  <meta name="description" content="Internal Pharmacy Management System for Sri Maheswari Medical / Sri Balaji Pharmacy - Purchase Bills, OCR, Inventory Batches, Distributors, and Expiry Tracking." />
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Telugu:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  
+  <!-- Material Symbols Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#005c55",
+            "primary-container": "#0f766e",
+            "on-primary": "#ffffff",
+            "on-primary-container": "#a3faef",
+            "primary-fixed": "#9cf2e8",
+            "primary-fixed-dim": "#80d5cb",
+            "on-primary-fixed": "#00201d",
+            "on-primary-fixed-variant": "#00504a",
+            "inverse-primary": "#80d5cb",
+
+            "secondary": "#216963",
+            "secondary-container": "#a8ece5",
+            "on-secondary": "#ffffff",
+            "on-secondary-container": "#266d68",
+            "secondary-fixed": "#abefe8",
+            "secondary-fixed-dim": "#8fd3cc",
+            "on-secondary-fixed": "#00201e",
+            "on-secondary-fixed-variant": "#00504b",
+
+            "tertiary": "#2d5951",
+            "tertiary-container": "#467169",
+            "on-tertiary": "#ffffff",
+            "on-tertiary-container": "#c5f3ea",
+            "tertiary-fixed": "#bdece2",
+            "tertiary-fixed-dim": "#a2d0c6",
+            "on-tertiary-fixed": "#00201c",
+            "on-tertiary-fixed-variant": "#224e47",
+
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6",
+            "on-error": "#ffffff",
+            "on-error-container": "#93000a",
+
+            "surface": "#f8f9ff",
+            "surface-bright": "#f8f9ff",
+            "surface-dim": "#cbdbf5",
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#eff4ff",
+            "surface-container": "#e5eeff",
+            "surface-container-high": "#dce9ff",
+            "surface-container-highest": "#d3e4fe",
+            "surface-variant": "#d3e4fe",
+            "surface-tint": "#006a63",
+
+            "on-surface": "#0b1c30",
+            "on-surface-variant": "#3e4947",
+            "outline": "#6e7977",
+            "outline-variant": "#bdc9c6",
+
+            "background": "#f8f9ff",
+            "on-background": "#0b1c30",
+            "inverse-surface": "#213145",
+            "inverse-on-surface": "#eaf1ff"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "sm": "0.125rem",
+            "md": "0.5rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "2xl": "1rem",
+            "full": "9999px"
+          },
+          spacing: {
+            "space-2xs": "0.25rem",
+            "space-xs": "0.5rem",
+            "space-sm": "0.75rem",
+            "space-md": "1rem",
+            "space-lg": "1.5rem",
+            "space-xl": "2rem",
+            "space-2xl": "2.5rem",
+            "space-3xl": "3rem",
+            "gutter-mobile": "1rem",
+            "gutter-tablet": "1.5rem",
+            "gutter-desktop": "1.5rem",
+            "margin-mobile": "1rem",
+            "margin-desktop": "2rem",
+            "max-width": "1440px"
+          },
+          fontFamily: {
+            sans: ["Inter", "Noto Sans Telugu", "sans-serif"],
+            "headline-sm": ["Inter", "Noto Sans Telugu", "sans-serif"],
+            "headline-md": ["Inter", "Noto Sans Telugu", "sans-serif"],
+            "headline-lg": ["Inter", "Noto Sans Telugu", "sans-serif"],
+            "body-sm": ["Inter", "Noto Sans Telugu", "sans-serif"],
+            "body-md": ["Inter", "Noto Sans Telugu", "sans-serif"],
+            "body-lg": ["Inter", "Noto Sans Telugu", "sans-serif"],
+            "label-sm": ["Inter", "Noto Sans Telugu", "sans-serif"],
+            "label-md": ["Inter", "Noto Sans Telugu", "sans-serif"],
+            "label-lg": ["Inter", "Noto Sans Telugu", "sans-serif"],
+            "label-caps": ["Inter", "sans-serif"],
+            "code-num": ["Inter", "monospace"],
+            "code-md": ["Inter", "monospace"],
+            "tabular-mono": ["Inter", "monospace"]
+          },
+          fontSize: {
+            "label-caps": ["11px", { lineHeight: "16px", letterSpacing: "0.05em", fontWeight: "600" }],
+            "label-sm": ["11px", { lineHeight: "14px", letterSpacing: "0.03em", fontWeight: "600" }],
+            "label-md": ["12px", { lineHeight: "16px", letterSpacing: "0.01em", fontWeight: "500" }],
+            "label-lg": ["14px", { lineHeight: "20px", letterSpacing: "0.005em", fontWeight: "500" }],
+            "body-sm": ["12px", { lineHeight: "16px", letterSpacing: "0.01em", fontWeight: "400" }],
+            "body-md": ["14px", { lineHeight: "20px", letterSpacing: "0em", fontWeight: "400" }],
+            "body-lg": ["16px", { lineHeight: "24px", letterSpacing: "0em", fontWeight: "400" }],
+            "code-md": ["13px", { lineHeight: "18px", letterSpacing: "0em", fontWeight: "500" }],
+            "code-num": ["13px", { lineHeight: "18px", letterSpacing: "0em", fontWeight: "500" }],
+            "tabular-mono": ["14px", { lineHeight: "20px", letterSpacing: "0em", fontWeight: "500" }],
+            "headline-sm": ["16px", { lineHeight: "24px", letterSpacing: "0em", fontWeight: "600" }],
+            "headline-md": ["20px", { lineHeight: "28px", letterSpacing: "-0.01em", fontWeight: "600" }],
+            "headline-lg": ["24px", { lineHeight: "32px", letterSpacing: "-0.015em", fontWeight: "600" }],
+            "display-lg": ["32px", { lineHeight: "40px", letterSpacing: "-0.02em", fontWeight: "700" }]
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    @layer base {
+      html, body {
+        width: 100vw;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        overscroll-behavior: none;
+      }
+      .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      .pt-safe {
+        padding-top: env(safe-area-inset-top, 0px);
+      }
+      main > :first-child {
+        margin-top: 0 !important;
+      }
+      main > :last-child {
+        margin-bottom: 0 !important;
+      }
+    }
+    
+    /* Hide scrollbars while allowing smooth scrolling */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(110, 121, 119, 0.25);
+      border-radius: 9999px;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      line-height: 1;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+    }
+    
+    /* Tabular numeric alignment for Indian Rupee amounts and batch codes */
+    .font-code-num, .font-tabular-mono, .numeric-data {
+      font-feature-settings: "tnum" 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Dark mode overrides for Stitch colors */
+    html.dark {
+      color-scheme: dark;
+    }
+    html.dark body {
+      background-color: #0b1326;
+      color: #dae2fd;
+    }
+    html.dark .bg-background,
+    html.dark .bg-surface {
+      background-color: #0b1326;
+    }
+    html.dark .bg-surface-container-lowest {
+      background-color: #060e20;
+    }
+    html.dark .bg-surface-container-low {
+      background-color: #131b2e;
+    }
+    html.dark .bg-surface-container {
+      background-color: #171f33;
+    }
+    html.dark .bg-surface-container-high {
+      background-color: #222a3d;
+    }
+    html.dark .bg-surface-container-highest {
+      background-color: #2d3449;
+    }
+    html.dark .text-on-surface {
+      color: #dae2fd;
+    }
+    html.dark .text-on-surface-variant {
+      color: #bacac5;
+    }
+    html.dark .border-outline-variant {
+      border-color: #3c4a46;
+    }
+  </style>
+</head>
+<body class="bg-surface font-body-md text-body-md text-on-surface antialiased min-h-screen flex flex-col selection:bg-secondary-container selection:text-on-secondary-fixed">
+  <!-- Dynamic Mount Root -->
+  <div id="app" class="flex flex-col min-h-screen w-full relative"></div>
+
+  <!-- Main Application Entry Script -->
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

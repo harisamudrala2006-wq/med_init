@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>MediTrack - Sri Balaji Pharmacy</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+    @layer base {
+      html, body {
+        width: 100vw;
+        margin: 0;
+        padding: 0;
+        background-color: #0F172A;
+      }
+      body {
+        overscroll-behavior: none;
+      }
+      .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      .pt-safe {
+        padding-top: env(safe-area-inset-top, 0px);
+      }
+    }
+    ::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+</head>
+<body class="bg-[#0F172A] font-['Inter',sans-serif] text-[#F8FAFC] antialiased pt-safe pb-safe min-h-screen flex flex-col justify-center items-center">
+<main class="flex flex-col relative w-full max-w-md mx-auto min-h-screen px-4 py-6 justify-between">
+<!-- Top Utility Bar: Language Selector & Mode Indicator -->
+<div class="flex items-center justify-between w-full mb-4">
+<div class="flex items-center bg-[#1E293B] border border-[#334155] px-1.5 py-1 rounded-full shadow-sm">
+<button class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#334155] text-[#F8FAFC] transition-all" id="lang-en" type="button">
+          EN
+        </button>
+<span class="text-[#64748B] text-xs px-1">|</span>
+<button class="px-2.5 py-0.5 rounded-full text-xs font-medium text-[#94A3B8] hover:text-[#F8FAFC] transition-all" id="lang-te" type="button">
+          తెలుగు
+        </button>
+</div>
+<div class="flex items-center space-x-1.5 bg-[#1E293B] border border-[#334155] px-3 py-1 rounded-full shadow-sm">
+<span class="inline-block w-2 h-2 rounded-full bg-[#2DD4BF] animate-pulse"></span>
+<span class="text-[#94A3B8] text-[11px] font-medium tracking-wider uppercase flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]" style="font-variation-settings: 'FILL' 1;">terminal</span>
+          SEC-01
+        </span>
+</div>
+</div>
+<!-- Main Centered Login Card -->
+<div class="w-full bg-[#111827] border border-[#334155] rounded-2xl p-6 shadow-xl flex flex-col">
+<!-- Pharmacy Branding Header -->
+<div class="flex flex-col items-center text-center mb-6">
+<div class="w-14 h-14 rounded-xl bg-[#1E293B] border border-[#334155] flex items-center justify-center mb-3 shadow-inner">
+<span class="material-symbols-outlined text-[#2DD4BF] text-3xl" style="font-variation-settings: 'FILL' 1;">local_pharmacy</span>
+</div>
+<h1 class="text-xl font-semibold text-[#F8FAFC] tracking-tight">
+          Sri Balaji Pharmacy
+        </h1>
+<p class="text-sm text-[#94A3B8] mt-0.5">
+          Pharmacy Management System
+        </p>
+<!-- Station Badge -->
+<div class="mt-3 inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#1E293B] border border-[#334155] text-[#2DD4BF] text-xs font-medium">
+<span class="material-symbols-outlined text-xs">storefront</span>
+<span>Dispensing Station Active</span>
+</div>
+</div>
+<!-- Clinical Alert / Validation Banner -->
+<div class="mb-5 flex items-start gap-2.5 p-3 rounded-lg bg-[#7F1D1D]/30 border border-[#991B1B] text-[#FECACA]" id="validation-banner">
+<span class="material-symbols-outlined text-base mt-0.5 text-[#F87171]" style="font-variation-settings: 'FILL' 1;">error</span>
+<div class="flex-1 min-w-0">
+<p class="text-xs font-semibold text-[#FCA5A5]">Authentication Required</p>
+<p class="text-xs text-[#E2E8F0] mt-0.5 leading-snug">Invalid login details. Please try again.</p>
+</div>
+<button class="text-[#94A3B8] hover:text-[#F8FAFC] p-0.5" onclick="document.getElementById('validation-banner').classList.add('hidden')" type="button">
+<span class="material-symbols-outlined text-sm">close</span>
+</button>
+</div>
+<!-- Authentication Form -->
+<form class="flex flex-col space-y-4" id="login-form" onsubmit="event.preventDefault(); triggerAuth();">
+<!-- Field 1: Mobile / Email -->
+<div class="flex flex-col space-y-1.5">
+<label class="text-xs font-medium text-[#F8FAFC] flex items-center justify-between" for="identifier-input">
+<span>Mobile Number or Email</span>
+<span class="text-[#94A3B8] text-[11px]">Staff ID / POS</span>
+</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3.5 text-[#94A3B8] text-lg select-none">badge</span>
+<input autocomplete="username" class="w-full bg-[#1E293B] border border-[#334155] text-[#F8FAFC] placeholder-[#94A3B8] rounded-lg py-3 pl-10 pr-3.5 text-sm focus:outline-none focus:border-[#2DD4BF] focus:ring-1 focus:ring-[#2DD4BF] transition-colors" id="identifier-input" placeholder="e.g. PH-9042 or 9876543210" required="" type="text"/>
+</div>
+</div>
+<!-- Field 2: Password with Reveal -->
+<div class="flex flex-col space-y-1.5">
+<div class="flex items-center justify-between">
+<label class="text-xs font-medium text-[#F8FAFC]" for="password-input">
+              Dispenser PIN / Password
+            </label>
+<a class="text-xs text-[#2DD4BF] hover:underline transition-colors" href="#forgot">
+              Forgot Password?
+            </a>
+</div>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3.5 text-[#94A3B8] text-lg select-none">lock</span>
+<input autocomplete="current-password" class="w-full bg-[#1E293B] border border-[#334155] text-[#F8FAFC] placeholder-[#94A3B8] rounded-lg py-3 pl-10 pr-10 text-sm focus:outline-none focus:border-[#2DD4BF] focus:ring-1 focus:ring-[#2DD4BF] transition-colors" id="password-input" placeholder="••••••••••••" required="" type="password"/>
+<button aria-label="Toggle password visibility" class="absolute right-3 p-1 text-[#94A3B8] hover:text-[#F8FAFC] transition-colors focus:outline-none flex items-center justify-center" id="toggle-pwd" onclick="togglePasswordVisibility()" type="button">
+<span class="material-symbols-outlined text-lg" id="pwd-icon">visibility</span>
+</button>
+</div>
+</div>
+<!-- Checkbox -->
+<div class="flex items-center justify-between pt-0.5">
+<label class="flex items-center space-x-2 cursor-pointer select-none">
+<input checked="" class="w-4 h-4 rounded bg-[#1E293B] border-[#334155] text-[#2DD4BF] focus:ring-0 focus:ring-offset-0 accent-[#2DD4BF] cursor-pointer" id="remember-me" type="checkbox"/>
+<span class="text-xs text-[#94A3B8]">Remember this cart device</span>
+</label>
+</div>
+<!-- Primary Button -->
+<div class="pt-1">
+<button class="w-full bg-[#14B8A6] hover:bg-[#0D9488] active:bg-[#0F766E] text-[#0F172A] font-semibold rounded-lg py-3 text-sm flex items-center justify-center space-x-2 transition-all shadow-sm" id="submit-btn" type="submit">
+<span class="material-symbols-outlined text-lg">login</span>
+<span>Sign In</span>
+</button>
+</div>
+</form>
+<!-- Duty Role Info -->
+<div class="mt-5 pt-3.5 border-t border-[#334155] flex items-center justify-between text-xs">
+<div class="flex items-center space-x-1.5 text-[#94A3B8]">
+<span class="material-symbols-outlined text-[#2DD4BF] text-base">verified_user</span>
+<span>Pharmacist on Duty</span>
+</div>
+<span class="text-[11px] font-mono text-[#2DD4BF] bg-[#1E293B] border border-[#334155] px-2 py-0.5 rounded">R.Ph. Verified</span>
+</div>
+</div>
+<!-- Security Footer Badge & Regulatory Block -->
+<div class="mt-6 mb-2 text-center flex flex-col items-center space-y-2">
+<div class="flex items-center justify-center gap-1.5 text-[#94A3B8] text-xs">
+<span class="material-symbols-outlined text-[#2DD4BF] text-sm">lock</span>
+<span>TLS 1.3 Encrypted • Pharmacy POS Access Only</span>
+</div>
+<div class="flex flex-wrap items-center justify-center gap-x-2 text-[#64748B] text-[11px]">
+<span>Sri Balaji Pharmacy</span>
+<span>•</span>
+<span class="font-mono">DL: TG/HYD/2022/49102</span>
+<span>•</span>
+<span>v4.8.2</span>
+</div>
+</div>
+</main>
+<script>
+    function togglePasswordVisibility() {
+      var pwdInput = document.getElementById('password-input');
+      var pwdIcon = document.getElementById('pwd-icon');
+      if (!pwdInput || !pwdIcon) return;
+      
+      if (pwdInput.type === 'password') {
+        pwdInput.type = 'text';
+        pwdIcon.textContent = 'visibility_off';
+      } else {
+        pwdInput.type = 'password';
+        pwdIcon.textContent = 'visibility';
+      }
+    }
+
+    function triggerAuth() {
+      var banner = document.getElementById('validation-banner');
+      var btn = document.getElementById('submit-btn');
+      if (!banner || !btn) return;
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-lg">sync</span><span>Verifying...</span>';
+      
+      setTimeout(function() {
+        banner.classList.remove('hidden');
+        btn.disabled = false;
+        btn.innerHTML = '<span class="material-symbols-outlined text-lg">login</span><span>Sign In</span>';
+      }, 600);
+    }
+
+    // Language toggle interaction
+    var btnEn = document.getElementById('lang-en');
+    var btnTe = document.getElementById('lang-te');
+    if (btnEn && btnTe) {
+      btnEn.addEventListener('click', function() {
+        btnEn.classList.add('bg-[#334155]', 'text-[#F8FAFC]', 'font-semibold');
+        btnEn.classList.remove('text-[#94A3B8]');
+        btnTe.classList.remove('bg-[#334155]', 'text-[#F8FAFC]', 'font-semibold');
+        btnTe.classList.add('text-[#94A3B8]');
+      });
+      btnTe.addEventListener('click', function() {
+        btnTe.classList.add('bg-[#334155]', 'text-[#F8FAFC]', 'font-semibold');
+        btnTe.classList.remove('text-[#94A3B8]');
+        btnEn.classList.remove('bg-[#334155]', 'text-[#F8FAFC]', 'font-semibold');
+        btnEn.classList.add('text-[#94A3B8]');
+      });
+    }
+  </script>
+</body></html>

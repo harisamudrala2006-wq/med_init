@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/>
+<title>MediTrack - Sri Balaji Pharmacy Settings</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style>
+    @layer base {
+      html, body {
+        width: 100vw;
+        margin: 0;
+        padding: 0;
+        background-color: #0F172A;
+      }
+      body {
+        overscroll-behavior: none;
+      }
+      .pb-safe {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      .pt-safe {
+        padding-top: env(safe-area-inset-top, 0px);
+      }
+    }
+    ::-webkit-scrollbar {
+      display: none;
+    }
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-[#0F172A] font-['Inter'] text-[#F8FAFC] antialiased flex flex-col min-h-screen">
+<!-- Fixed Top Header -->
+<header class="fixed top-0 w-full z-50 pt-safe bg-[#111827] border-b border-[#334155]">
+<div class="h-16 px-4 flex items-center justify-between gap-3">
+<div class="flex items-center gap-2.5 min-w-0 flex-1">
+<div class="w-8 h-8 rounded-lg bg-[#14B8A6]/20 border border-[#14B8A6]/40 flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[#2DD4BF] text-[20px]">local_pharmacy</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="font-semibold text-[15px] leading-tight text-[#F8FAFC] truncate">Sri Balaji Pharmacy</span>
+<span class="text-[11px] text-[#94A3B8] truncate">Settings / సెట్టింగ్స్</span>
+</div>
+</div>
+<div class="flex items-center gap-2 flex-shrink-0">
+<!-- Bilingual toggle -->
+<button aria-label="Language Toggle" class="h-7 px-2.5 rounded-full bg-[#1E293B] border border-[#334155] text-[11px] font-medium text-[#94A3B8] flex items-center justify-center gap-1" type="button">
+<span class="text-[#2DD4BF] font-semibold">EN</span>
+<span class="text-[#475569]">|</span>
+<span>తెలుగు</span>
+</button>
+<!-- Dark Mode Badge Indicator -->
+<div class="h-7 px-2 rounded-full bg-[#1E293B] border border-[#334155] flex items-center gap-1 text-[11px] text-[#2DD4BF]">
+<span class="material-symbols-outlined text-[14px]">dark_mode</span>
+<span class="font-medium">Dark</span>
+</div>
+<!-- Pharmacist Avatar -->
+<div class="w-8 h-8 rounded-full ring-1 ring-[#334155] overflow-hidden bg-[#1E293B] flex-shrink-0">
+<img alt="Pharmacist Rajesh Sharma" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida/AEtjO1UZoBKOHjHUODpUTe3Q4kty05mIpB0r1JX3boVPQ1WnRcgWU7I-kt4UypaV0cEi5J6O1H_VWVcbZL2oyIqN0HP3ISJCejlviybtoPCjHXYD562hlFM0Mdcr_m8R3pf0iTNN94rTDK8z1Nfi09mulscLhSauEwpQcym6b7TFYu7y2n5jdooLEd7KyZEEc65u3O9W12A0Mr2vZZ5_FpVUpIDuDHrUIzQfinQrtznBZo-dlJiu-qDl1-Q9gsrN"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Scrollable Content -->
+<main class="flex flex-col relative w-full pt-16 pb-24 bg-[#0F172A] min-h-screen">
+<div class="flex flex-col w-full px-4 py-4 gap-4 text-[#F8FAFC]">
+<!-- Title & Status Subheader -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#2DD4BF] text-[24px]">tune</span>
+<h1 class="text-[18px] font-semibold tracking-tight text-[#F8FAFC]">Dispensary Settings</h1>
+</div>
+<span class="text-[11px] font-medium px-2.5 py-0.5 rounded-full bg-[#14B8A6]/15 border border-[#14B8A6]/40 text-[#2DD4BF] flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-[#2DD4BF]"></span>
+          v2.4.1 Active
+        </span>
+</div>
+<!-- SECTION 1: ACCOUNT -->
+<section class="flex flex-col gap-2">
+<span class="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider px-1">Account</span>
+<div class="bg-[#111827] border border-[#334155] rounded-xl p-3.5 flex flex-col gap-3">
+<!-- Profile: Pharmacist on Duty -->
+<div class="flex items-center justify-between pb-3 border-b border-[#334155]">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-[#1E293B] border border-[#334155] flex items-center justify-center text-[#2DD4BF] flex-shrink-0">
+<span class="material-symbols-outlined text-[22px]">badge</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[11px] text-[#94A3B8]">Pharmacist on Duty</span>
+<span class="text-[14px] font-semibold text-[#F8FAFC]">Rajesh Sharma</span>
+<span class="text-[11px] text-[#94A3B8]">Reg. Ph. #TS-28491 • Shift ID #HYD-0982</span>
+</div>
+</div>
+<span class="text-[11px] px-2 py-0.5 rounded bg-[#1E293B] border border-[#334155] text-[#2DD4BF] font-medium">On Shift</span>
+</div>
+<!-- Pharmacy Information -->
+<div class="flex flex-col gap-2.5">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#2DD4BF] text-[18px]">storefront</span>
+<span class="text-[13px] font-semibold text-[#F8FAFC]">Sri Balaji Pharmacy</span>
+</div>
+<span class="text-[11px] font-medium text-[#94A3B8]">Kukatpally Main Rd, HYD</span>
+</div>
+<div class="grid grid-cols-2 gap-2 pt-1">
+<!-- DL -->
+<div class="bg-[#1E293B] border border-[#334155] rounded-lg p-2.5 flex flex-col">
+<span class="text-[10px] uppercase font-semibold text-[#94A3B8]">Drug License (DL)</span>
+<span class="text-[12px] font-mono font-semibold text-[#F8FAFC] mt-0.5">TG/HYD/2022/49102</span>
+<span class="text-[10px] text-[#2DD4BF] mt-0.5">Valid till 2027</span>
+</div>
+<!-- GSTIN -->
+<div class="bg-[#1E293B] border border-[#334155] rounded-lg p-2.5 flex flex-col">
+<span class="text-[10px] uppercase font-semibold text-[#94A3B8]">GSTIN</span>
+<span class="text-[12px] font-mono font-semibold text-[#F8FAFC] mt-0.5">36AABCU9603R1ZM</span>
+<span class="text-[10px] text-[#2DD4BF] mt-0.5">Composition Reg</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 2: PREFERENCES -->
+<section class="flex flex-col gap-2">
+<span class="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider px-1">Preferences</span>
+<div class="bg-[#111827] border border-[#334155] rounded-xl p-3.5 flex flex-col gap-3.5">
+<!-- Language Option -->
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-[13px] font-medium text-[#F8FAFC]">
+<span class="material-symbols-outlined text-[#2DD4BF] text-[16px]">translate</span>
+<span>Language / భాష</span>
+</div>
+<span class="text-[11px] text-[#94A3B8]">Bilingual interface</span>
+</div>
+<div class="grid grid-cols-2 gap-2" id="lang-selector-group">
+<!-- English (Selected) -->
+<button class="flex items-center justify-between p-2.5 rounded-lg bg-[#1E293B] border border-[#2DD4BF] text-left transition-colors" id="btn-lang-en" onclick="selectLang('en')" type="button">
+<div class="flex items-center gap-2">
+<span class="w-6 h-6 rounded bg-[#14B8A6]/20 text-[#2DD4BF] text-[12px] font-bold flex items-center justify-center">EN</span>
+<span class="text-[13px] font-medium text-[#F8FAFC]">English</span>
+</div>
+<span class="material-symbols-outlined text-[#2DD4BF] text-[18px]">radio_button_checked</span>
+</button>
+<!-- Telugu -->
+<button class="flex items-center justify-between p-2.5 rounded-lg bg-[#1E293B] border border-[#334155] text-left hover:border-[#475569] transition-colors" id="btn-lang-te" onclick="selectLang('te')" type="button">
+<div class="flex items-center gap-2">
+<span class="w-6 h-6 rounded bg-[#334155] text-[#94A3B8] text-[12px] font-bold flex items-center justify-center">తె</span>
+<span class="text-[13px] font-medium text-[#94A3B8]">తెలుగు</span>
+</div>
+<span class="material-symbols-outlined text-[#94A3B8] text-[18px]">radio_button_unchecked</span>
+</button>
+</div>
+</div>
+<!-- Appearance Option -->
+<div class="flex flex-col gap-2 pt-2 border-t border-[#334155]">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-1.5 text-[13px] font-medium text-[#F8FAFC]">
+<span class="material-symbols-outlined text-[#2DD4BF] text-[16px]">palette</span>
+<span>Appearance</span>
+</div>
+<span class="text-[11px] text-[#2DD4BF] font-medium">Dark Mode Active</span>
+</div>
+<!-- 3 Options: Light, Dark (Selected), System -->
+<div class="grid grid-cols-3 gap-2">
+<!-- Light Option -->
+<button class="theme-btn flex flex-col p-2.5 rounded-lg bg-[#1E293B] border border-[#334155] text-left hover:border-[#475569] transition-all" id="btn-theme-light" onclick="selectTheme('light')" type="button">
+<div class="w-full h-8 rounded bg-[#334155]/60 mb-2 flex items-center justify-center">
+<span class="material-symbols-outlined text-[#94A3B8] text-[16px]">light_mode</span>
+</div>
+<div class="flex items-center justify-between w-full">
+<span class="text-[12px] font-medium text-[#94A3B8]">Light</span>
+<span class="material-symbols-outlined text-[#475569] text-[14px]">radio_button_unchecked</span>
+</div>
+</button>
+<!-- Dark Option (Visibly Selected) -->
+<button class="theme-btn flex flex-col p-2.5 rounded-lg bg-[#1E293B] border-2 border-[#2DD4BF] text-left transition-all relative" id="btn-theme-dark" onclick="selectTheme('dark')" type="button">
+<div class="w-full h-8 rounded bg-[#0F172A] border border-[#14B8A6]/40 mb-2 flex items-center justify-center">
+<span class="material-symbols-outlined text-[#2DD4BF] text-[16px]">dark_mode</span>
+</div>
+<div class="flex items-center justify-between w-full">
+<span class="text-[12px] font-semibold text-[#F8FAFC]">Dark</span>
+<span class="material-symbols-outlined text-[#2DD4BF] text-[16px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</button>
+<!-- System Option -->
+<button class="theme-btn flex flex-col p-2.5 rounded-lg bg-[#1E293B] border border-[#334155] text-left hover:border-[#475569] transition-all" id="btn-theme-system" onclick="selectTheme('system')" type="button">
+<div class="w-full h-8 rounded bg-[#334155]/60 mb-2 flex items-center justify-center">
+<span class="material-symbols-outlined text-[#94A3B8] text-[16px]">brightness_auto</span>
+</div>
+<div class="flex items-center justify-between w-full">
+<span class="text-[12px] font-medium text-[#94A3B8]">System</span>
+<span class="material-symbols-outlined text-[#475569] text-[14px]">radio_button_unchecked</span>
+</div>
+</button>
+</div>
+</div>
+</div>
+</section>
+<!-- SECTION 3: NOTIFICATIONS -->
+<section class="flex flex-col gap-2">
+<span class="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider px-1">Notifications</span>
+<div class="bg-[#111827] border border-[#334155] rounded-xl p-2 flex flex-col divide-y divide-[#334155]">
+<!-- Payment Reminders (Toggle On) -->
+<label class="flex items-center justify-between p-2.5 cursor-pointer hover:bg-[#1E293B]/60 rounded-lg transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#1E293B] border border-[#334155] flex items-center justify-center text-[#2DD4BF] flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">account_balance_wallet</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[13px] font-medium text-[#F8FAFC]">Payment Reminders</span>
+<span class="text-[11px] text-[#94A3B8]">Daily distributor reconciliation push</span>
+</div>
+</div>
+<!-- Native Styled Dark Toggle Switch (ON) -->
+<div class="relative inline-flex items-center">
+<input checked="" class="sr-only peer" id="toggle-payment" type="checkbox"/>
+<div class="w-10 h-5 bg-[#334155] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#14B8A6]"></div>
+</div>
+</label>
+<!-- Expiry Reminders (Toggle On) -->
+<label class="flex items-center justify-between p-2.5 cursor-pointer hover:bg-[#1E293B]/60 rounded-lg transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#1E293B] border border-[#334155] flex items-center justify-center text-[#2DD4BF] flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">hourglass_bottom</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[13px] font-medium text-[#F8FAFC]">Expiry Reminders</span>
+<span class="text-[11px] text-[#94A3B8]">Alert 30 days prior to shelf medicine expiry</span>
+</div>
+</div>
+<!-- Native Styled Dark Toggle Switch (ON) -->
+<div class="relative inline-flex items-center">
+<input checked="" class="sr-only peer" id="toggle-expiry" type="checkbox"/>
+<div class="w-10 h-5 bg-[#334155] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#14B8A6]"></div>
+</div>
+</label>
+<!-- Price Anomaly Alerts (Toggle On) -->
+<label class="flex items-center justify-between p-2.5 cursor-pointer hover:bg-[#1E293B]/60 rounded-lg transition-colors">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#1E293B] border border-[#334155] flex items-center justify-center text-[#2DD4BF] flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">price_change</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[13px] font-medium text-[#F8FAFC]">Price Anomaly Alerts</span>
+<span class="text-[11px] text-[#94A3B8]">Notify wholesale price hike &gt;10% from supplier</span>
+</div>
+</div>
+<!-- Native Styled Dark Toggle Switch (ON) -->
+<div class="relative inline-flex items-center">
+<input checked="" class="sr-only peer" id="toggle-price" type="checkbox"/>
+<div class="w-10 h-5 bg-[#334155] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#14B8A6]"></div>
+</div>
+</label>
+</div>
+</section>
+<!-- SECTION 4: SECURITY -->
+<section class="flex flex-col gap-2">
+<span class="text-[11px] font-bold text-[#94A3B8] uppercase tracking-wider px-1">Security</span>
+<div class="bg-[#111827] border border-[#334155] rounded-xl p-2 flex flex-col divide-y divide-[#334155]">
+<!-- Change Password -->
+<button class="w-full flex items-center justify-between p-2.5 rounded-lg hover:bg-[#1E293B] transition-colors text-left" type="button">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#1E293B] border border-[#334155] flex items-center justify-center text-[#2DD4BF] flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">lock_reset</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[13px] font-medium text-[#F8FAFC]">Change Password</span>
+<span class="text-[11px] text-[#94A3B8]">Update master dispensary account credentials</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-[#94A3B8] text-[18px]">chevron_right</span>
+</button>
+<!-- Cloud Backup Status -->
+<div class="flex items-center justify-between p-2.5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-[#1E293B] border border-[#334155] flex items-center justify-center text-[#2DD4BF] flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">cloud_sync</span>
+</div>
+<div class="flex flex-col">
+<span class="text-[13px] font-medium text-[#F8FAFC]">Automatic Backup</span>
+<span class="text-[11px] text-[#94A3B8]">Synced 14m ago • 1.4 MB encrypted</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-[#2DD4BF] text-[18px]">check_circle</span>
+</div>
+</div>
+<!-- Clean Danger Logout Button -->
+<button class="mt-2 w-full h-11 px-4 rounded-xl bg-[#111827] border border-[#F87171]/40 text-[#F87171] hover:bg-[#F87171]/10 transition-colors text-[13px] font-semibold flex items-center justify-center gap-2 active:scale-[0.99]" onclick="confirmLogout()" type="button">
+<span class="material-symbols-outlined text-[18px]">logout</span>
+          Log Out / లాగ్ అవుట్
+        </button>
+</section>
+<!-- Shift footer label -->
+<div class="text-center text-[11px] text-[#94A3B8] pt-1 pb-4">
+        Dispensary POS Session #HYD-SH-0982 • Secured by 256-bit SSL
+      </div>
+</div>
+</main>
+<!-- Dark Bottom Navigation -->
+<nav class="fixed bottom-0 w-full z-50 pb-safe bg-[#111827] border-t border-[#334155]" data-active-classes="text-[#2DD4BF] font-semibold">
+<div class="h-16 px-1 grid grid-cols-5 items-center">
+<!-- Dashboard -->
+<a class="flex flex-col items-center justify-center min-h-[44px] h-full text-[#94A3B8] hover:text-[#F8FAFC] transition-colors gap-0.5" data-path="dashboard" href="#">
+<span class="material-symbols-outlined text-[20px]">space_dashboard</span>
+<span class="text-[10px] font-medium">Dashboard</span>
+</a>
+<!-- Bills -->
+<a class="flex flex-col items-center justify-center min-h-[44px] h-full text-[#94A3B8] hover:text-[#F8FAFC] transition-colors gap-0.5" data-path="bills" href="#">
+<span class="material-symbols-outlined text-[20px]">receipt_long</span>
+<span class="text-[10px] font-medium">Bills</span>
+</a>
+<!-- Inventory -->
+<a class="flex flex-col items-center justify-center min-h-[44px] h-full text-[#94A3B8] hover:text-[#F8FAFC] transition-colors gap-0.5" data-path="inventory" href="#">
+<span class="material-symbols-outlined text-[20px]">inventory_2</span>
+<span class="text-[10px] font-medium">Inventory</span>
+</a>
+<!-- Distributors -->
+<a class="flex flex-col items-center justify-center min-h-[44px] h-full text-[#94A3B8] hover:text-[#F8FAFC] transition-colors gap-0.5" data-path="distributors" href="#">
+<span class="material-symbols-outlined text-[20px]">local_shipping</span>
+<span class="text-[10px] font-medium">Distributors</span>
+</a>
+<!-- Settings (Active) -->
+<a aria-current="page" class="flex flex-col items-center justify-center min-h-[44px] h-full text-[#2DD4BF] font-semibold transition-colors gap-0.5" data-path="more-settings" href="#">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+<span class="text-[10px]">Settings</span>
+</a>
+</div>
+</nav>
+<script>
+    function selectTheme(mode) {
+      const themes = ['light', 'dark', 'system'];
+      themes.forEach(t => {
+        const btn = document.getElementById('btn-theme-' + t);
+        if (!btn) return;
+        const iconSpan = btn.querySelector('.material-symbols-outlined:last-child');
+        const textSpan = btn.querySelector('span.text-\\[12px\\]');
+        if (t === mode) {
+          btn.classList.add('border-2', 'border-[#2DD4BF]');
+          btn.classList.remove('border-[#334155]');
+          if (textSpan) {
+            textSpan.classList.add('text-[#F8FAFC]', 'font-semibold');
+            textSpan.classList.remove('text-[#94A3B8]');
+          }
+          if (iconSpan) {
+            iconSpan.innerText = 'check_circle';
+            iconSpan.classList.add('text-[#2DD4BF]');
+            iconSpan.classList.remove('text-[#475569]');
+            iconSpan.setAttribute('style', "font-variation-settings: 'FILL' 1;");
+          }
+        } else {
+          btn.classList.remove('border-2', 'border-[#2DD4BF]');
+          btn.classList.add('border', 'border-[#334155]');
+          if (textSpan) {
+            textSpan.classList.remove('text-[#F8FAFC]', 'font-semibold');
+            textSpan.classList.add('text-[#94A3B8]');
+          }
+          if (iconSpan) {
+            iconSpan.innerText = 'radio_button_unchecked';
+            iconSpan.classList.remove('text-[#2DD4BF]');
+            iconSpan.classList.add('text-[#475569]');
+            iconSpan.removeAttribute('style');
+          }
+        }
+      });
+    }
+
+    function selectLang(lang) {
+      const enBtn = document.getElementById('btn-lang-en');
+      const teBtn = document.getElementById('btn-lang-te');
+      if (!enBtn || !teBtn) return;
+
+      const enIcon = enBtn.querySelector('.material-symbols-outlined');
+      const teIcon = teBtn.querySelector('.material-symbols-outlined');
+      const enBadge = enBtn.querySelector('span:first-child');
+      const teBadge = teBtn.querySelector('span:first-child');
+      const enText = enBtn.querySelector('span.text-\\[13px\\]');
+      const teText = teBtn.querySelector('span.text-\\[13px\\]');
+
+      if (lang === 'en') {
+        enBtn.classList.add('border-[#2DD4BF]');
+        enBtn.classList.remove('border-[#334155]');
+        enIcon.innerText = 'radio_button_checked';
+        enIcon.classList.add('text-[#2DD4BF]');
+        enIcon.classList.remove('text-[#94A3B8]');
+        enBadge.classList.add('bg-[#14B8A6]/20', 'text-[#2DD4BF]');
+        enBadge.classList.remove('bg-[#334155]', 'text-[#94A3B8]');
+        enText.classList.add('text-[#F8FAFC]');
+        enText.classList.remove('text-[#94A3B8]');
+
+        teBtn.classList.remove('border-[#2DD4BF]');
+        teBtn.classList.add('border-[#334155]');
+        teIcon.innerText = 'radio_button_unchecked';
+        teIcon.classList.remove('text-[#2DD4BF]');
+        teIcon.classList.add('text-[#94A3B8]');
+        teBadge.classList.remove('bg-[#14B8A6]/20', 'text-[#2DD4BF]');
+        teBadge.classList.add('bg-[#334155]', 'text-[#94A3B8]');
+        teText.classList.remove('text-[#F8FAFC]');
+        teText.classList.add('text-[#94A3B8]');
+      } else {
+        teBtn.classList.add('border-[#2DD4BF]');
+        teBtn.classList.remove('border-[#334155]');
+        teIcon.innerText = 'radio_button_checked';
+        teIcon.classList.add('text-[#2DD4BF]');
+        teIcon.classList.remove('text-[#94A3B8]');
+        teBadge.classList.add('bg-[#14B8A6]/20', 'text-[#2DD4BF]');
+        teBadge.classList.remove('bg-[#334155]', 'text-[#94A3B8]');
+        teText.classList.add('text-[#F8FAFC]');
+        teText.classList.remove('text-[#94A3B8]');
+
+        enBtn.classList.remove('border-[#2DD4BF]');
+        enBtn.classList.add('border-[#334155]');
+        enIcon.innerText = 'radio_button_unchecked';
+        enIcon.classList.remove('text-[#2DD4BF]');
+        enIcon.classList.add('text-[#94A3B8]');
+        enBadge.classList.remove('bg-[#14B8A6]/20', 'text-[#2DD4BF]');
+        enBadge.classList.add('bg-[#334155]', 'text-[#94A3B8]');
+        enText.classList.remove('text-[#F8FAFC]');
+        enText.classList.add('text-[#94A3B8]');
+      }
+    }
+
+    function confirmLogout() {
+      if (confirm('Are you sure you want to end shift #HYD-SH-0982 and log out?')) {
+        alert('Logged out successfully.');
+      }
+    }
+  </script>
+</body></html>
