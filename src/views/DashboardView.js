@@ -272,7 +272,13 @@ export function renderDashboardView() {
           </div>
 
           <div class="bg-surface-container-lowest dark:bg-surface-container rounded-xl shadow-sm p-space-xs space-y-space-xs border border-outline-variant/30">
-            ${activities.map(act => `
+            ${activities.length === 0 ? `
+              <div class="py-8 text-center text-on-surface-variant flex flex-col items-center justify-center gap-1.5">
+                <span class="material-symbols-outlined text-[32px] text-outline">history</span>
+                <p class="font-headline-sm text-sm font-semibold text-on-surface">No Recent Activity</p>
+                <p class="font-body-sm text-xs text-on-surface-variant">Invoices and payments you record will appear here.</p>
+              </div>
+            ` : activities.map(act => `
               <div class="flex items-center justify-between p-space-xs hover:bg-surface-container-low dark:hover:bg-surface-container-high rounded-lg transition-colors">
                 <div class="flex items-center gap-space-xs min-w-0">
                   <div class="w-8 h-8 rounded-full bg-surface-container dark:bg-surface-container-high flex items-center justify-center flex-shrink-0 text-primary dark:text-primary-fixed">

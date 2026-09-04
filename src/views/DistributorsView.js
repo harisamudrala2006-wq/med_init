@@ -54,74 +54,93 @@ export function renderDistributorsView() {
         </div>
 
         <!-- Distributors Grid / List -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-space-sm">
-          ${filtered.map(dist => {
-            const finances = dbService.getDistributorFinances(dist.id);
-            const hasDue = finances.outstanding > 0;
+        ${filtered.length === 0 ? `
+          <div class="bg-surface-container-lowest dark:bg-surface-container rounded-2xl p-8 text-center border border-outline-variant/30 flex flex-col items-center justify-center gap-3">
+            <div class="w-14 h-14 rounded-2xl bg-surface-container-low dark:bg-surface-container-high flex items-center justify-center text-primary">
+              <span class="material-symbols-outlined text-[32px]">domain_disabled</span>
+            </div>
+            <h3 class="font-headline-sm text-headline-sm text-on-surface">No Distributors Found</h3>
+            <p class="font-body-sm text-body-sm text-on-surface-variant max-w-md">
+              No wholesale vendors recorded yet. Add your distributors manually or scan a purchase invoice to start tracking ledgers.
+            </p>
+            <button 
+              id="dist-empty-add-btn"
+              class="mt-2 h-10 px-space-md bg-primary-container text-on-primary rounded-xl font-label-md text-label-md flex items-center gap-2 shadow-sm cursor-pointer"
+              type="button"
+            >
+              <span class="material-symbols-outlined text-[18px]">person_add</span>
+              <span>Add First Distributor</span>
+            </button>
+          </div>
+        ` : `
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-space-sm">
+            ${filtered.map(dist => {
+              const finances = dbService.getDistributorFinances(dist.id);
+              const hasDue = finances.outstanding > 0;
 
-            return `
-              <div class="bg-surface-container-lowest dark:bg-surface-container rounded-xl p-space-md shadow-sm border border-outline-variant/30 flex flex-col justify-between hover:border-primary/50 transition-all space-y-3">
-                
-                <!-- Distributor Header -->
-                <div class="flex items-start justify-between gap-2">
-                  <div class="flex items-center gap-space-sm min-w-0">
-                    <div class="w-11 h-11 rounded-lg bg-surface-container dark:bg-surface-container-high flex items-center justify-center flex-shrink-0 text-primary">
-                      <span class="material-symbols-outlined text-[24px]">domain</span>
+              return `
+                <div class="bg-surface-container-lowest dark:bg-surface-container rounded-xl p-space-md shadow-sm border border-outline-variant/30 flex flex-col justify-between hover:border-primary/50 transition-all space-y-3">
+                  
+                  <!-- Distributor Header -->
+                  <div class="flex items-start justify-between gap-2">
+                    <div class="flex items-center gap-space-sm min-w-0">
+                      <div class="w-11 h-11 rounded-lg bg-surface-container dark:bg-surface-container-high flex items-center justify-center flex-shrink-0 text-primary">
+                        <span class="material-symbols-outlined text-[24px]">domain</span>
+                      </div>
+                      <div class="min-w-0">
+                        <h2 class="font-headline-sm text-headline-sm text-on-surface truncate">
+                          ${dist.name}
+                        </h2>
+                        <p class="font-code-num text-[12px] text-on-surface-variant">
+                          GSTIN: ${dist.gstin || 'N/A'} • DL: ${dist.dlNumber || 'N/A'}
+                        </p>
+                      </div>
                     </div>
-                    <div class="min-w-0">
-                      <h2 class="font-headline-sm text-headline-sm text-on-surface truncate">
-                        ${dist.name}
-                      </h2>
-                      <p class="font-code-num text-[12px] text-on-surface-variant">
-                        GSTIN: ${dist.gstin || 'N/A'} • DL: ${dist.dlNumber || 'N/A'}
-                      </p>
+
+                    <span class="px-2 py-0.5 rounded text-[11px] font-bold ${
+                      hasDue ? 'bg-tertiary-container/20 text-tertiary' : 'bg-secondary-container text-primary'
+                    } flex-shrink-0">
+                      ${hasDue ? 'Due Outstanding' : 'Settled'}
+                    </span>
+                  </div>
+
+                  <!-- Financial Ledger Metric Strip -->
+                  <div class="grid grid-cols-3 gap-2 bg-surface-container-low dark:bg-surface-container-high p-space-xs rounded-lg text-body-sm">
+                    <div>
+                      <span class="font-label-caps text-label-caps text-on-surface-variant block uppercase">Purchases</span>
+                      <span class="font-code-num text-on-surface font-semibold">₹${finances.totalPurchases.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <div>
+                      <span class="font-label-caps text-label-caps text-on-surface-variant block uppercase">Settled</span>
+                      <span class="font-code-num text-secondary dark:text-secondary-fixed font-semibold">₹${finances.totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <div>
+                      <span class="font-label-caps text-label-caps text-tertiary block uppercase font-bold">Outstanding</span>
+                      <span class="font-code-num text-tertiary font-bold">₹${finances.outstanding.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
                     </div>
                   </div>
 
-                  <span class="px-2 py-0.5 rounded text-[11px] font-bold ${
-                    hasDue ? 'bg-tertiary-container/20 text-tertiary' : 'bg-secondary-container text-primary'
-                  } flex-shrink-0">
-                    ${hasDue ? 'Due Outstanding' : 'Settled'}
-                  </span>
+                  <!-- Contact & Actions Footer -->
+                  <div class="flex items-center justify-between pt-space-2xs border-t border-outline-variant/20 text-body-sm">
+                    <span class="text-on-surface-variant font-code-num text-[12px]">
+                      ${dist.phone}
+                    </span>
+
+                    <button 
+                      data-view-distributor="${dist.id}"
+                      class="font-label-md text-label-md text-primary dark:text-primary-fixed font-semibold hover:underline flex items-center gap-0.5 cursor-pointer"
+                      type="button"
+                    >
+                      <span>View Ledger</span>
+                      <span class="material-symbols-outlined text-[16px]">chevron_right</span>
+                    </button>
+                  </div>
+
                 </div>
-
-                <!-- Financial Ledger Metric Strip -->
-                <div class="grid grid-cols-3 gap-2 bg-surface-container-low dark:bg-surface-container-high p-space-xs rounded-lg text-body-sm">
-                  <div>
-                    <span class="font-label-caps text-label-caps text-on-surface-variant block uppercase">Purchases</span>
-                    <span class="font-code-num text-on-surface font-semibold">₹${finances.totalPurchases.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  <div>
-                    <span class="font-label-caps text-label-caps text-on-surface-variant block uppercase">Settled</span>
-                    <span class="font-code-num text-secondary dark:text-secondary-fixed font-semibold">₹${finances.totalPaid.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                  <div>
-                    <span class="font-label-caps text-label-caps text-tertiary block uppercase font-bold">Outstanding</span>
-                    <span class="font-code-num text-tertiary font-bold">₹${finances.outstanding.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span>
-                  </div>
-                </div>
-
-                <!-- Contact & Actions Footer -->
-                <div class="flex items-center justify-between pt-1 text-body-sm text-on-surface-variant">
-                  <div class="flex items-center gap-1 min-w-0 truncate">
-                    <span class="material-symbols-outlined text-[16px] text-outline">call</span>
-                    <a href="tel:${dist.phone}" class="hover:underline text-secondary">${dist.phone}</a>
-                  </div>
-
-                  <button 
-                    data-view-distributor="${dist.id}"
-                    class="font-label-md text-label-md text-primary dark:text-primary-fixed font-semibold hover:underline flex items-center gap-0.5 cursor-pointer"
-                    type="button"
-                  >
-                    <span>View Ledger</span>
-                    <span class="material-symbols-outlined text-[16px]">chevron_right</span>
-                  </button>
-                </div>
-
-              </div>
-            `;
-          }).join('')}
-        </div>
+              `;
+            }).join('')}
+          </div>
+        `}
 
       </div>
     </main>
@@ -135,8 +154,8 @@ export function bindDistributorsEvents(container, router) {
     router.renderCurrentView();
   });
 
-  // Add Distributor
-  container.querySelector('#dist-add-new-btn')?.addEventListener('click', () => {
+  // Add Distributor Handler
+  const handleAddDist = () => {
     const name = prompt("Enter Distributor Company Name:");
     if (!name) return;
     const phone = prompt("Enter Phone Number:", "+91 98480 ");
@@ -153,7 +172,10 @@ export function bindDistributorsEvents(container, router) {
 
     alert(`Distributor "${name}" created successfully!`);
     router.renderCurrentView();
-  });
+  };
+
+  container.querySelector('#dist-add-new-btn')?.addEventListener('click', handleAddDist);
+  container.querySelector('#dist-empty-add-btn')?.addEventListener('click', handleAddDist);
 
   // View Distributor Detail
   container.querySelectorAll('[data-view-distributor]').forEach(btn => {

@@ -34,101 +34,6 @@ const COLLECTIONS = [
   'auditLogs'
 ];
 
-// Clean initial data seeded directly into Firestore for a new pharmacy
-const INITIAL_DISTRIBUTORS = [
-  {
-    id: "dist_abc_pharma",
-    name: "ABC Pharma Distributors Ltd.",
-    gstin: "37AABCA1234F1Z0",
-    dlNumber: "20B/21B-TG-2019",
-    contactPerson: "Rajesh Kumar",
-    phone: "+91 98480 22334",
-    email: "orders@abcpharma.com",
-    address: "Plot 12, Industrial Estate, Vijayawada Central",
-    paymentTerms: "Net 15 Days",
-    createdAt: "2024-01-10T10:00:00Z"
-  },
-  {
-    id: "dist_apex_medilink",
-    name: "Apex Medilink Lifecare LLP",
-    gstin: "37AAPEX9876E1Z5",
-    dlNumber: "20B/21B-AP-2021",
-    contactPerson: "V. Srinivas",
-    phone: "+91 94401 55678",
-    email: "billing@apexmedilink.in",
-    address: "D.No 4-55, Wholesale Market, Guntur",
-    paymentTerms: "Net 21 Days",
-    createdAt: "2024-02-15T11:30:00Z"
-  },
-  {
-    id: "dist_sterling_health",
-    name: "Sterling Healthcare Supply Co.",
-    gstin: "37ASTLH4321D1ZQ",
-    dlNumber: "20B/21B-TG-2020",
-    contactPerson: "K. Mohan",
-    phone: "+91 97003 44112",
-    email: "dispatch@sterlinghealth.com",
-    address: "Autonagar Industrial Hub, Visakhapatnam",
-    paymentTerms: "Net 7 Days",
-    createdAt: "2024-03-01T09:15:00Z"
-  },
-  {
-    id: "dist_cipla_depot",
-    name: "Cipla Authorized Depot",
-    gstin: "37ACIPD5678K1ZR",
-    dlNumber: "20B/21B-AP-2018",
-    contactPerson: "Anand Reddy",
-    phone: "+91 98850 88990",
-    email: "depot.ap@cipla.com",
-    address: "Pharma City, Parawada, Visakhapatnam",
-    paymentTerms: "Net 30 Days",
-    createdAt: "2024-01-05T08:00:00Z"
-  }
-];
-
-const INITIAL_PRODUCTS = [
-  {
-    id: "prod_aug_625",
-    name: "Augmentin 625 Duo Tablet",
-    genericSalt: "Amoxicillin (500mg) + Clavulanic Acid (125mg)",
-    manufacturer: "GSK Pharmaceuticals Ltd",
-    category: "Antibiotic",
-    hsnCode: "300410",
-    gstRate: 12,
-    defaultPackSize: "10 Tablets"
-  },
-  {
-    id: "prod_pan_d",
-    name: "Pan-D Capsule",
-    genericSalt: "Pantoprazole (40mg) + Domperidone (30mg)",
-    manufacturer: "Alkem Laboratories",
-    category: "Gastrointestinal",
-    hsnCode: "300490",
-    gstRate: 12,
-    defaultPackSize: "15 Capsules"
-  },
-  {
-    id: "prod_dolo_650",
-    name: "Dolo 650 Tablet",
-    genericSalt: "Paracetamol (650mg)",
-    manufacturer: "Micro Labs Ltd",
-    category: "Analgesic / Antipyretic",
-    hsnCode: "300490",
-    gstRate: 12,
-    defaultPackSize: "15 Tablets"
-  },
-  {
-    id: "prod_azith_500",
-    name: "Azithral 500 Tablet",
-    genericSalt: "Azithromycin (500mg)",
-    manufacturer: "Alembic Pharmaceuticals",
-    category: "Antibiotic",
-    hsnCode: "300420",
-    gstRate: 12,
-    defaultPackSize: "5 Tablets"
-  }
-];
-
 class DatabaseService {
   constructor() {
     this.listeners = new Set();
@@ -181,16 +86,9 @@ class DatabaseService {
         const colRef = collection(db, collectionName);
         const q = query(colRef, where('pharmacyId', '==', pharmacyId));
 
-        const unsub = onSnapshot(q, async (snapshot) => {
+        const unsub = onSnapshot(q, (snapshot) => {
           if (snapshot.empty) {
-            // First time this pharmacy accesses this collection in Firestore: seed initial catalogs
-            if (collectionName === 'distributors' && this.cache.distributors.length === 0) {
-              await this.seedInitialCollection('distributors', INITIAL_DISTRIBUTORS);
-            } else if (collectionName === 'products' && this.cache.products.length === 0) {
-              await this.seedInitialCollection('products', INITIAL_PRODUCTS);
-            } else {
-              this.cache[collectionName] = [];
-            }
+            this.cache[collectionName] = [];
           } else {
             const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
             this.cache[collectionName] = items;
@@ -207,26 +105,6 @@ class DatabaseService {
         console.warn(`Failed to connect listener for ${collectionName}:`, err);
       }
     });
-  }
-
-  async seedInitialCollection(collectionName, items) {
-    if (!db || !isRealFirebaseConfigured) return;
-    try {
-      const batch = writeBatch(db);
-      const pharmacyId = this.activePharmacyId;
-      items.forEach(item => {
-        const docRef = doc(db, collectionName, String(item.id));
-        batch.set(docRef, {
-          ...item,
-          pharmacyId,
-          createdAt: item.createdAt || new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        }, { merge: true });
-      });
-      await batch.commit();
-    } catch (e) {
-      console.warn(`Initial Firestore seed notice for ${collectionName}:`, e);
-    }
   }
 
   subscribe(fn) {

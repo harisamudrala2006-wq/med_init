@@ -112,7 +112,13 @@ export function renderPaymentsView() {
           <span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider font-bold">
             Settlement Audit Feed
           </span>
-          ${allPayments.map(p => `
+          ${allPayments.length === 0 ? `
+            <div class="bg-surface-container-lowest dark:bg-surface-container rounded-2xl p-6 text-center text-on-surface-variant border border-outline-variant/30 flex flex-col items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-[32px] text-outline">payments</span>
+              <p class="font-headline-sm text-sm">No Payment Settlements Recorded</p>
+              <p class="font-body-sm text-xs">Recorded distributor payments and remittances will appear here.</p>
+            </div>
+          ` : allPayments.map(p => `
             <div class="bg-surface-container-lowest dark:bg-surface-container rounded-xl p-space-md shadow-sm border border-outline-variant/30 flex items-center justify-between">
               <div class="flex items-center gap-3">
                 <div class="w-10 h-10 rounded-lg bg-secondary-container dark:bg-secondary-container/40 flex items-center justify-center text-primary">

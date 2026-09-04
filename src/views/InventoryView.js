@@ -124,7 +124,17 @@ export function renderInventoryView(params = {}) {
 
         <!-- Inventory Batches List -->
         <div class="space-y-space-xs">
-          ${filtered.map(batch => {
+          ${filtered.length === 0 ? `
+            <div class="bg-surface-container-lowest dark:bg-surface-container rounded-2xl p-8 text-center text-on-surface-variant border border-outline-variant/30 flex flex-col items-center justify-center gap-3">
+              <div class="w-14 h-14 rounded-2xl bg-surface-container-low dark:bg-surface-container-high flex items-center justify-center text-primary">
+                <span class="material-symbols-outlined text-[32px]">inventory_2</span>
+              </div>
+              <h3 class="font-headline-sm text-headline-sm text-on-surface">No Batches in Inventory</h3>
+              <p class="font-body-sm text-body-sm text-on-surface-variant max-w-md">
+                No active stock found. Scan and save distributor purchase bills to automatically populate your batch inventory.
+              </p>
+            </div>
+          ` : filtered.map(batch => {
             const isExp = batch.daysLeft <= 0;
             const isCritical = batch.daysLeft > 0 && batch.daysLeft <= 30;
             const isWarning = batch.daysLeft > 30 && batch.daysLeft <= 60;
