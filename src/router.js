@@ -89,7 +89,7 @@ class Router {
 
   renderCurrentView() {
     // If not authenticated, render Login view without header/nav
-    if (!authState.isAuthenticated || this.currentRoute === 'login') {
+    if (!authService.isAuthenticated || this.currentRoute === 'login') {
       this.app.innerHTML = renderLoginView();
       bindLoginEvents(this.app, this);
       return;

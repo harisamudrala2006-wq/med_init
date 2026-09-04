@@ -5,8 +5,13 @@ let currentTheme = localStorage.getItem('medi_theme') || 'light';
 const listeners = new Set();
 
 function applyTheme(theme) {
+  if (typeof document === 'undefined') return;
   const root = document.documentElement;
-  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (!root) return;
+
+  const prefersDark = (typeof window !== 'undefined' && typeof window.matchMedia === 'function')
+    ? Boolean(window.matchMedia('(prefers-color-scheme: dark)').matches)
+    : false;
   
   if (theme === 'dark' || (theme === 'system' && prefersDark)) {
     root.classList.add('dark');
@@ -21,13 +26,17 @@ function applyTheme(theme) {
 applyTheme(currentTheme);
 
 // Listen to system changes if on system theme
-if (typeof window !== 'undefined') {
-  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-    if (currentTheme === 'system') {
-      applyTheme('system');
-      listeners.forEach(fn => fn(currentTheme));
-    }
-  });
+if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+  try {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+      if (currentTheme === 'system') {
+        applyTheme('system');
+        listeners.forEach(fn => fn(currentTheme));
+      }
+    });
+  } catch (e) {
+    console.warn("Could not attach dark mode listener:", e);
+  }
 }
 
 export const themeState = {

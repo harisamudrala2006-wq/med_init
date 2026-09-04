@@ -34,20 +34,22 @@ import {
   getDownloadURL 
 } from 'firebase/storage';
 
+const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
+
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDummyKeyForDevelopment",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "sri-maheswari-medical.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "sri-maheswari-medical",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "sri-maheswari-medical.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "305132129196",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:305132129196:web:c69ac9d2b2045b3e340809"
+  apiKey: env.VITE_FIREBASE_API_KEY || "AIzaSyDnFzWQH490WGWLBtVwBkE-y_OhG3rhPAI",
+  authDomain: env.VITE_FIREBASE_AUTH_DOMAIN || "sri-maheswari-medical.firebaseapp.com",
+  projectId: env.VITE_FIREBASE_PROJECT_ID || "sri-maheswari-medical",
+  storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET || "sri-maheswari-medical.firebasestorage.app",
+  messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || "305132129196",
+  appId: env.VITE_FIREBASE_APP_ID || "1:305132129196:web:c69ac9d2b2045b3e340809"
 };
 
 // Determine if we have real Firebase configured
 export const isRealFirebaseConfigured = Boolean(
-  import.meta.env.VITE_FIREBASE_API_KEY && 
-  import.meta.env.VITE_FIREBASE_API_KEY !== "your_api_key_here" &&
-  import.meta.env.VITE_FIREBASE_API_KEY !== "AIzaSyDummyKeyForDevelopment"
+  firebaseConfig.apiKey && 
+  firebaseConfig.apiKey !== "your_api_key_here" &&
+  firebaseConfig.apiKey !== "AIzaSyDummyKeyForDevelopment"
 );
 
 let app, auth, db, storage;
