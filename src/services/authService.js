@@ -294,10 +294,93 @@ export const authService = {
     } catch (error) {
       isAuthLoading = false;
       listeners.forEach(fn => fn(currentUser));
-      return { 
-        success: false, 
-        error: error.message || "Authentication failed. Please check your credentials." 
+      let msg = error.message || "Authentication failed.";
+      if (error.code === 'auth/operation-not-allowed') {
+        msg = "Email/Password sign-in is disabled. Please enable 'Email/Password' in your Firebase Console > Authentication > Sign-in method.";
+      } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+        msg = "Invalid email or password. Please check your credentials or create an account.";
+      }
+      return { success: false, error: msg };
+    }
+  },
+
+  /**
+   * Real Email & Password Registration
+   */
+  async registerWithEmail(email, password, fullName = 'Pharmacist', pharmacyName = 'Sri Maheswari Medical', role = 'owner') {
+    isAuthLoading = true;
+    listeners.forEach(fn => fn(currentUser));
+
+    if (!auth || !isRealFirebaseConfigured) {
+      isAuthLoading = false;
+      listeners.forEach(fn => fn(currentUser));
+      return { success: false, error: "Firebase Authentication is not configured in .env" };
+    }
+
+    try {
+      const cleanEmail = email.trim();
+      const cleanPwd = password.trim();
+      const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPwd);
+      const fbUser = userCredential.user;
+
+      const pharmacyId = `pharm_${Date.now()}`;
+      const userRole = role || 'owner';
+      const resolvedName = fullName.trim() || 'Pharmacist';
+
+      if (db && isRealFirebaseConfigured) {
+        try {
+          await setDoc(doc(db, 'pharmacies', pharmacyId), {
+            id: pharmacyId,
+            name: pharmacyName.trim(),
+            subName: "Retail Dispensary",
+            ownerUid: fbUser.uid,
+            createdAt: new Date().toISOString()
+          }, { merge: true });
+        } catch (e) {
+          console.warn("Pharmacy doc creation notice:", e);
+        }
+
+        try {
+          await setDoc(doc(db, 'users', fbUser.uid), {
+            uid: fbUser.uid,
+            email: cleanEmail,
+            fullName: resolvedName,
+            pharmacyId,
+            role: userRole,
+            createdAt: new Date().toISOString(),
+            lastLoginAt: new Date().toISOString()
+          }, { merge: true });
+        } catch (e) {
+          console.warn("User doc creation notice:", e);
+        }
+      }
+
+      currentUser = {
+        uid: fbUser.uid,
+        email: cleanEmail,
+        fullName: resolvedName,
+        pharmacyId,
+        role: userRole
       };
+
+      localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+      isAuthLoading = false;
+      listeners.forEach(fn => fn(currentUser));
+      return { success: true, user: currentUser };
+    } catch (error) {
+      isAuthLoading = false;
+      listeners.forEach(fn => fn(currentUser));
+      let msg = error.message || "Failed to create account.";
+      if (error.code === 'auth/operation-not-allowed') {
+        msg = "Email/Password registration is disabled. Please enable 'Email/Password' in your Firebase Console > Authentication > Sign-in method.";
+      } else if (error.code === 'auth/email-already-in-use') {
+        msg = "This email is already registered. Please switch to 'Sign In' instead.";
+      } else if (error.code === 'auth/weak-password') {
+        msg = "Password should be at least 6 characters.";
+      } else if (error.code === 'auth/invalid-email') {
+        msg = "Please enter a valid email address.";
+      }
+      return { success: false, error: msg };
     }
   },
 
@@ -314,6 +397,10 @@ export const authService = {
     } catch (error) {
       return { success: false, error: error.message };
     }
+  },
+
+  async resetPassword(email) {
+    return this.sendPasswordReset(email);
   },
 
   /**

@@ -564,36 +564,42 @@ export function bindLoginEvents(container, router) {
       return;
     }
 
-    if (activeAuthMode === 'signup') {
-      const fullName = container.querySelector('#email-fullname')?.value?.trim() || "Dr. K. Rama Rao";
-      const pharmacyName = container.querySelector('#email-pharmacy-name')?.value?.trim() || "Sri Maheswari Medical";
-      const role = container.querySelector('#email-role')?.value || "owner";
+    try {
+      if (activeAuthMode === 'signup') {
+        const fullName = container.querySelector('#email-fullname')?.value?.trim() || "Dr. K. Rama Rao";
+        const pharmacyName = container.querySelector('#email-pharmacy-name')?.value?.trim() || "Sri Maheswari Medical";
+        const role = container.querySelector('#email-role')?.value || "owner";
 
-      if (btnText) btnText.textContent = "Creating Account...";
+        if (btnText) btnText.textContent = "Creating Account...";
 
-      const res = await authService.registerWithEmail(email, password, fullName, pharmacyName, role);
-      if (res.success) {
-        const pharmacyId = res.user?.pharmacyId || 'pharmacy_sri_maheswari';
-        pharmacyService.initRealtimeSync(pharmacyId);
-        dbService.initFirestoreSync();
-        router.navigate('dashboard');
+        const res = await authService.registerWithEmail(email, password, fullName, pharmacyName, role);
+        if (res.success) {
+          const pharmacyId = res.user?.pharmacyId || 'pharmacy_sri_maheswari';
+          pharmacyService.initRealtimeSync(pharmacyId);
+          dbService.initFirestoreSync();
+          router.navigate('dashboard');
+        } else {
+          if (btnText) btnText.textContent = "Create Pharmacy Account";
+          showError("Registration Notice", res.error || "Could not register account. Try another email.");
+        }
       } else {
-        if (btnText) btnText.textContent = "Create Pharmacy Account";
-        showError("Registration Failed", res.error || "Could not register account. Try another email.");
-      }
-    } else {
-      if (btnText) btnText.textContent = "Signing In...";
+        if (btnText) btnText.textContent = "Signing In...";
 
-      const res = await authService.loginWithEmail(email, password);
-      if (res.success) {
-        const pharmacyId = res.user?.pharmacyId || 'pharmacy_sri_maheswari';
-        pharmacyService.initRealtimeSync(pharmacyId);
-        dbService.initFirestoreSync();
-        router.navigate('dashboard');
-      } else {
-        if (btnText) btnText.textContent = "Sign In with Email";
-        showError("Sign In Failed", res.error || "Invalid email or password.");
+        const res = await authService.loginWithEmail(email, password);
+        if (res.success) {
+          const pharmacyId = res.user?.pharmacyId || 'pharmacy_sri_maheswari';
+          pharmacyService.initRealtimeSync(pharmacyId);
+          dbService.initFirestoreSync();
+          router.navigate('dashboard');
+        } else {
+          if (btnText) btnText.textContent = "Sign In with Email";
+          showError("Sign In Failed", res.error || "Invalid email or password.");
+        }
       }
+    } catch (err) {
+      console.error("Authentication submit error:", err);
+      if (btnText) btnText.textContent = activeAuthMode === 'signup' ? "Create Pharmacy Account" : "Sign In with Email";
+      showError("Authentication Error", err.message || "An unexpected error occurred. Please try again.");
     }
   });
 
