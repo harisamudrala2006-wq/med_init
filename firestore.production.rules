@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper to get requesting user's document
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    
+    // Check if user belongs to the requested pharmacy
+    function belongsToPharmacy(pharmacyId) {
+      return isAuthenticated() && (
+        getUserData().pharmacyId == pharmacyId || 
+        request.auth.token.pharmacyId == pharmacyId
+      );
+    }
+    
+    // Pharmacies collection: Only authenticated members can read their pharmacy profile
+    match /pharmacies/{pharmacyId} {
+      allow read: if belongsToPharmacy(pharmacyId);
+      allow update: if belongsToPharmacy(pharmacyId) && (getUserData().role == 'owner' || getUserData().role == 'admin');
+      allow create: if isAuthenticated();
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || belongsToPharmacy(resource.data.pharmacyId));
+      allow write: if isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Distributors
+    match /distributors/{distributorId} {
+      allow read: if belongsToPharmacy(resource.data.pharmacyId);
+      allow create: if belongsToPharmacy(request.resource.data.pharmacyId);
+      allow update, delete: if belongsToPharmacy(resource.data.pharmacyId);
+    }
+    
+    // Products
+    match /products/{productId} {
+      allow read: if belongsToPharmacy(resource.data.pharmacyId);
+      allow create: if belongsToPharmacy(request.resource.data.pharmacyId);
+      allow update, delete: if belongsToPharmacy(resource.data.pharmacyId);
+    }
+    
+    // Product Batches (Batch-based Inventory)
+    match /productBatches/{batchId} {
+      allow read: if belongsToPharmacy(resource.data.pharmacyId);
+      allow create: if belongsToPharmacy(request.resource.data.pharmacyId);
+      allow update, delete: if belongsToPharmacy(resource.data.pharmacyId);
+    }
+    
+    // Purchase Bills
+    match /purchaseBills/{billId} {
+      allow read: if belongsToPharmacy(resource.data.pharmacyId);
+      allow create: if belongsToPharmacy(request.resource.data.pharmacyId);
+      allow update, delete: if belongsToPharmacy(resource.data.pharmacyId);
+    }
+    
+    // Payments
+    match /payments/{paymentId} {
+      allow read: if belongsToPharmacy(resource.data.pharmacyId);
+      allow create: if belongsToPharmacy(request.resource.data.pharmacyId);
+      allow update, delete: if belongsToPharmacy(resource.data.pharmacyId);
+    }
+    
+    // Inventory Adjustments
+    match /inventoryAdjustments/{adjustmentId} {
+      allow read: if belongsToPharmacy(resource.data.pharmacyId);
+      allow create: if belongsToPharmacy(request.resource.data.pharmacyId);
+      allow update, delete: if false; // Immutable audit records
+    }
+    
+    // Price Alerts
+    match /priceAlerts/{alertId} {
+      allow read: if belongsToPharmacy(resource.data.pharmacyId);
+      allow create, update: if belongsToPharmacy(request.resource.data.pharmacyId);
+      allow delete: if belongsToPharmacy(resource.data.pharmacyId);
+    }
+    
+    // Notifications
+    match /notifications/{notificationId} {
+      allow read: if belongsToPharmacy(resource.data.pharmacyId);
+      allow create, update: if belongsToPharmacy(request.resource.data.pharmacyId);
+      allow delete: if belongsToPharmacy(resource.data.pharmacyId);
+    }
+    
+    // Audit Logs: Append-only for accountability
+    match /auditLogs/{logId} {
+      allow read: if belongsToPharmacy(resource.data.pharmacyId);
+      allow create: if belongsToPharmacy(request.resource.data.pharmacyId);
+      allow update, delete: if false; // Strictly immutable
+    }
+  }
+}
